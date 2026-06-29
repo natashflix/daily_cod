@@ -331,6 +331,7 @@ function buildWS() {
         id: r * COLS + c, col: c, row: r,
         x, y, cx: x + DW / 2, cy: y + DH / 2,
         vio: null, vioAge: 0,
+        graceT: 0,
         alert: false, alertT: 0,
         removing: false, remT: 0, remType: null,
         caught: false, caughtT: 0,
@@ -432,6 +433,11 @@ function update(dt) {
   if (lvTime >= LVDUR) { advLevel(); return; }
   if (warnCD > 0) warnCD -= dt;
 
+  // ADM first — then check vision — then spawn
+  // (so newly spawned violations are never caught the same frame)
+  adms.forEach(a => updateADM(a, dt));
+  checkVision();
+
   spawnT += dt;
   if (spawnT >= nextSpawn) {
     spawnT = 0;
@@ -448,6 +454,7 @@ function update(dt) {
 
   ws.forEach(w => {
     if (w.vio) w.vioAge += dt;
+    if (w.graceT > 0) w.graceT -= dt;
     if (w.alert) {
       w.alertT -= dt;
       if (w.alertT <= 0) {
@@ -461,9 +468,6 @@ function update(dt) {
     }
     if (w.caught) { w.caughtT -= dt; if (w.caughtT <= 0) w.caught = false; }
   });
-
-  adms.forEach(a => updateADM(a, dt));
-  checkVision();
 
   ptcls = ptcls.filter(p => p.life > 0);
   ptcls.forEach(p => {
@@ -513,7 +517,7 @@ function updateADM(a, dt) {
 function checkVision() {
   if (warnCD > 0) return;
   for (const w of ws) {
-    if (!w.vio) continue;
+    if (!w.vio || w.graceT > 0) continue; // grace period after spawn
     for (const a of adms) {
       if (canSee(a, w.cx, w.cy)) {
         w.vio = null; w.alert = false;
@@ -559,6 +563,7 @@ function trySpawn() {
   const w = avail[Math.floor(Math.random() * avail.length)];
   w.vio = cfg.both && Math.random() < 0.45 ? 'screen' : 'bottle';
   w.vioAge = 0;
+  w.graceT = 1.5;
 }
 
 function doAdmAlert() {
