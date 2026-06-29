@@ -2,182 +2,156 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>School 21: ADM Patrol</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  background:#0B0C1A;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;color:#ECF0F1;
-  overflow:hidden;user-select:none;
-}
-#wrap{position:relative;display:inline-block;border-radius:12px;overflow:hidden;
-  box-shadow:0 24px 80px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.06);}
-canvas{display:block;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#09091a;
+  font-family:'Segoe UI',system-ui,sans-serif;color:#fff;touch-action:none;}
 
-/* HUD */
-#hud{
-  position:absolute;top:0;left:0;right:0;height:46px;
+#root{position:relative;width:100%;height:100%;display:flex;
+  align-items:center;justify-content:center;}
+
+canvas{display:block;touch-action:none;}
+
+/* ── HUD ── */
+#hud{position:absolute;top:0;left:0;right:0;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 18px;background:rgba(5,6,18,.82);
-  backdrop-filter:blur(8px);pointer-events:none;z-index:10;
-  border-bottom:1px solid rgba(255,255,255,.07);
-}
-.hi{display:flex;flex-direction:column;align-items:center;gap:1px;}
-.hl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.38);}
-.hv{font-size:19px;font-weight:800;color:#fff;line-height:1;}
+  background:rgba(5,5,22,.85);backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  padding:0 12px;pointer-events:none;z-index:10;}
+.hi{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0;}
+.hl{font-size:8px;text-transform:uppercase;letter-spacing:1px;
+  color:rgba(255,255,255,.35);}
+.hv{font-size:17px;font-weight:800;line-height:1;}
 #warnbar{display:flex;gap:5px;align-items:center;}
-.wd{width:13px;height:13px;border-radius:50%;border:2px solid rgba(231,76,60,.35);
-  background:transparent;transition:all .25s;}
-.wd.on{background:#E74C3C;border-color:#E74C3C;box-shadow:0 0 8px #E74C3C;}
-#comboEl{transition:color .2s,transform .15s;}
-#comboEl.lit{color:#A855F7;text-shadow:0 0 14px #A855F7;}
+.wd{width:11px;height:11px;border-radius:50%;
+  border:2px solid rgba(231,76,60,.35);background:transparent;transition:all .25s;}
+.wd.on{background:#EF4444;border-color:#EF4444;box-shadow:0 0 6px #EF4444;}
+#comboEl.lit{color:#A855F7;text-shadow:0 0 12px #A855F7;}
 
-/* Timer strip */
+/* ── Timer strip ── */
 #tstrip{position:absolute;bottom:0;left:0;right:0;height:3px;
   background:rgba(255,255,255,.08);pointer-events:none;z-index:10;}
 #tbar{height:100%;width:100%;
-  background:linear-gradient(90deg,#10B981,#F59E0B,#EF4444);
-  background-size:300%;transform-origin:left;transition:width .12s linear;}
+  background:linear-gradient(90deg,#10B981,#F59E0B,#EF4444);transform-origin:left;}
 
-/* Screens */
-.scr{
-  position:absolute;inset:0;display:none;flex-direction:column;
+/* ── Screens ── */
+.scr{position:absolute;inset:0;display:none;flex-direction:column;
   align-items:center;justify-content:center;
-  background:rgba(5,6,18,.94);backdrop-filter:blur(6px);z-index:100;
-  border-radius:12px;
-}
+  background:rgba(5,5,22,.95);backdrop-filter:blur(8px);
+  z-index:100;padding:24px;}
 .scr.show{display:flex;}
-.scr h1{font-size:38px;font-weight:900;margin-bottom:6px;}
-.scr p{font-size:15px;color:rgba(255,255,255,.55);margin-top:4px;text-align:center;}
-.btn{
-  margin-top:22px;padding:13px 38px;border:none;border-radius:8px;
-  font-size:17px;font-weight:700;cursor:pointer;transition:all .18s;
-  background:linear-gradient(135deg,#3B82F6,#1D4ED8);
-  color:#fff;box-shadow:0 4px 18px rgba(59,130,246,.4);
-}
-.btn:hover{transform:translateY(-2px);box-shadow:0 7px 24px rgba(59,130,246,.55);}
-.btn.g{background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 18px rgba(16,185,129,.4);}
-.btn.g:hover{box-shadow:0 7px 24px rgba(16,185,129,.55);}
-.btn.r{background:linear-gradient(135deg,#EF4444,#B91C1C);box-shadow:0 4px 18px rgba(239,68,68,.4);}
-.btn.r:hover{box-shadow:0 7px 24px rgba(239,68,68,.55);}
-.btn.sm{font-size:14px;padding:10px 26px;margin-top:10px;}
+.scr h1{font-size:30px;font-weight:900;text-align:center;margin-bottom:6px;}
+.scr p{font-size:14px;color:rgba(255,255,255,.5);margin-top:4px;text-align:center;}
+.btn{width:100%;max-width:280px;margin-top:18px;padding:16px;border:none;
+  border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,#3B82F6,#1D4ED8);color:#fff;
+  box-shadow:0 4px 20px rgba(59,130,246,.45);transition:all .15s;
+  -webkit-appearance:none;}
+.btn:active{transform:scale(.97);}
+.btn.g{background:linear-gradient(135deg,#10B981,#059669);
+  box-shadow:0 4px 20px rgba(16,185,129,.45);}
+.btn.r{background:linear-gradient(135deg,#EF4444,#B91C1C);
+  box-shadow:0 4px 20px rgba(239,68,68,.45);}
+.btn.sm{font-size:14px;padding:12px;margin-top:10px;}
 
-/* Stats grid */
-.sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0;width:300px;}
-.si{background:rgba(255,255,255,.05);border-radius:8px;padding:10px;text-align:center;
-  border:1px solid rgba(255,255,255,.07);}
-.sv{font-size:26px;font-weight:800;}
-.sl{font-size:10px;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+/* ── Stats grid ── */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;width:100%;max-width:280px;}
+.si{background:rgba(255,255,255,.06);border-radius:10px;padding:10px;text-align:center;
+  border:1px solid rgba(255,255,255,.08);}
+.sv{font-size:24px;font-weight:800;}
+.sl{font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;
+  letter-spacing:.5px;margin-top:2px;}
+#bestlbl{margin-top:12px;font-size:13px;color:rgba(255,255,255,.3);}
 
-/* Best score */
-#bestlbl{margin-top:14px;font-size:13px;color:rgba(255,255,255,.35);}
-
-/* Terminal modal */
-#term{
-  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.68);backdrop-filter:blur(4px);z-index:50;border-radius:12px;
-}
+/* ── Terminal modal ── */
+#term{position:absolute;inset:0;display:none;align-items:flex-end;
+  justify-content:center;background:rgba(0,0,0,.65);
+  backdrop-filter:blur(4px);z-index:50;padding:0;}
 #term.show{display:flex;}
-.twin{background:#13131F;border-radius:10px;width:370px;
-  box-shadow:0 24px 64px rgba(0,0,0,.95);border:1px solid rgba(255,255,255,.09);overflow:hidden;}
-.ttb{background:#1C1C2C;padding:10px 14px;display:flex;align-items:center;gap:7px;
-  border-bottom:1px solid rgba(255,255,255,.07);}
-.td{width:11px;height:11px;border-radius:50%;}
+.twin{background:#13131f;width:100%;max-width:460px;
+  border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px);
+  box-shadow:0 -20px 60px rgba(0,0,0,.9);
+  border:1px solid rgba(255,255,255,.1);border-bottom:none;
+  animation:slideup .25s ease;}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+.ttb{background:#1c1c2c;padding:12px 16px;display:flex;align-items:center;gap:6px;
+  border-radius:20px 20px 0 0;border-bottom:1px solid rgba(255,255,255,.07);}
+.td{width:10px;height:10px;border-radius:50%;}
 .td.re{background:#EF4444;}.td.ye{background:#F59E0B;}.td.gr{background:#10B981;}
-.ttb span{margin-left:6px;font-size:12px;color:rgba(255,255,255,.35);font-family:monospace;}
-.tbody{padding:20px;}
-.ttext{font-family:'Courier New',monospace;font-size:13px;color:#00E676;margin-bottom:10px;line-height:1.7;}
-.tinstr{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:16px;font-style:italic;}
+.ttb span{margin-left:6px;font-size:12px;color:rgba(255,255,255,.3);font-family:monospace;}
+.tbody{padding:16px;}
+.ttext{font-family:'Courier New',monospace;font-size:13px;color:#00E676;
+  margin-bottom:8px;line-height:1.6;}
+.tinstr{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:14px;}
 .tcmds{display:flex;gap:8px;}
-.cb{
-  flex:1;padding:11px 6px;border:1px solid rgba(0,230,118,.25);
-  background:rgba(0,230,118,.04);border-radius:6px;color:#00E676;
-  font-family:'Courier New',monospace;font-size:13px;cursor:pointer;
-  transition:all .18s;text-align:center;
-}
-.cb:hover{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.5);transform:translateY(-1px);}
-.cb.err{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.1);color:#EF4444;
-  animation:shake .4s;}
+.cb{flex:1;padding:14px 4px;border:1px solid rgba(0,230,118,.25);
+  background:rgba(0,230,118,.05);border-radius:10px;color:#00E676;
+  font-family:'Courier New',monospace;font-size:14px;cursor:pointer;
+  transition:all .15s;text-align:center;-webkit-appearance:none;}
+.cb:active{background:rgba(0,230,118,.2);transform:scale(.96);}
+.cb.err{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.1);
+  color:#EF4444;animation:shake .4s;}
 .cb.ok{border-color:rgba(16,185,129,.8);background:rgba(16,185,129,.15);color:#10B981;}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
-/* Level notif */
-#lvlnotif{
-  position:absolute;top:50%;left:50%;
+/* ── Level notif ── */
+#lvlnotif{position:absolute;top:50%;left:50%;
   transform:translate(-50%,-50%) scale(0);
   background:linear-gradient(135deg,rgba(16,185,129,.95),rgba(5,150,105,.95));
-  border-radius:12px;padding:18px 44px;
-  font-size:22px;font-weight:900;color:#fff;z-index:60;
-  pointer-events:none;text-align:center;
+  border-radius:16px;padding:18px 40px;font-size:20px;font-weight:900;
+  z-index:60;pointer-events:none;text-align:center;
   box-shadow:0 10px 40px rgba(16,185,129,.5);
-  transition:transform .38s cubic-bezier(.175,.885,.32,1.275);
-}
+  transition:transform .35s cubic-bezier(.175,.885,.32,1.275);}
 #lvlnotif.show{transform:translate(-50%,-50%) scale(1);}
 
-/* Messages */
-#msgs{
-  position:absolute;top:56px;right:14px;
-  display:flex;flex-direction:column;gap:5px;
-  pointer-events:none;z-index:20;align-items:flex-end;
-}
-.mg{
-  padding:7px 13px;border-radius:20px;font-size:12px;font-weight:600;
-  animation:mgin .28s ease,mgout .35s ease 1.65s forwards;white-space:nowrap;
-}
-@keyframes mgin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+/* ── Messages ── */
+#msgs{position:absolute;top:52px;right:10px;
+  display:flex;flex-direction:column;gap:4px;
+  pointer-events:none;z-index:20;align-items:flex-end;}
+.mg{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;
+  animation:mgin .25s ease,mgout .3s ease 1.7s forwards;white-space:nowrap;}
+@keyframes mgin{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
 @keyframes mgout{to{opacity:0;transform:translateY(-8px)}}
-.mg.s{background:rgba(16,185,129,.88);color:#fff;}
-.mg.w{background:rgba(239,68,68,.88);color:#fff;}
-.mg.i{background:rgba(59,130,246,.88);color:#fff;}
-.mg.c{background:rgba(168,85,247,.88);color:#fff;}
-.mg.b{background:rgba(245,158,11,.92);color:#fff;}
+.mg.s{background:rgba(16,185,129,.9);}.mg.w{background:rgba(239,68,68,.9);}
+.mg.i{background:rgba(59,130,246,.9);}.mg.c{background:rgba(168,85,247,.9);}
+.mg.b{background:rgba(245,158,11,.95);}
 
-/* Score popup */
-.sp{
-  position:absolute;pointer-events:none;font-weight:900;
-  animation:sfloat .95s ease forwards;z-index:30;
-  font-size:19px;text-shadow:0 2px 6px rgba(0,0,0,.8);
-  transform:translateX(-50%);
-}
-@keyframes sfloat{from{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
-  to{opacity:0;transform:translateX(-50%) translateY(-52px) scale(.7)}}
+/* ── Score popup ── */
+.sp{position:absolute;pointer-events:none;font-weight:900;
+  animation:sfloat .9s ease forwards;z-index:30;
+  font-size:16px;text-shadow:0 2px 6px rgba(0,0,0,.8);transform:translateX(-50%);}
+@keyframes sfloat{from{opacity:1;transform:translateX(-50%) translateY(0)}
+  to{opacity:0;transform:translateX(-50%) translateY(-44px)}}
 
-/* Cursor blink */
+/* ── Cursor blink ── */
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 #tcursor{animation:blink 1s infinite;}
-
-/* Tutorial hints */
-#hint{
-  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
-  font-size:11px;color:rgba(255,255,255,.28);pointer-events:none;z-index:10;
-  white-space:nowrap;
-}
 </style>
 </head>
 <body>
-<div id="wrap">
-  <canvas id="c" width="950" height="650"></canvas>
+<div id="root">
+  <canvas id="c"></canvas>
 
-  <!-- HUD -->
   <div id="hud">
     <div class="hi"><span class="hl">Уровень</span><span class="hv" id="hlvl">1</span></div>
     <div class="hi"><span class="hl">Очки</span><span class="hv" id="hscore">0</span></div>
     <div class="hi"><span class="hl">Комбо</span><span class="hv" id="comboEl">x1</span></div>
-    <div class="hi"><span class="hl">Предупреждения</span>
-      <div id="warnbar"><div class="wd" id="wd0"></div><div class="wd" id="wd1"></div><div class="wd" id="wd2"></div></div>
+    <div class="hi"><span class="hl">ADM</span>
+      <div id="warnbar">
+        <div class="wd" id="wd0"></div>
+        <div class="wd" id="wd1"></div>
+        <div class="wd" id="wd2"></div>
+      </div>
     </div>
     <div class="hi"><span class="hl">Время</span><span class="hv" id="htime">65</span></div>
   </div>
 
-  <!-- Timer strip -->
   <div id="tstrip"><div id="tbar"></div></div>
-
-  <!-- Messages -->
   <div id="msgs"></div>
-
-  <!-- Level notif -->
   <div id="lvlnotif"></div>
 
   <!-- Terminal -->
@@ -185,10 +159,10 @@ canvas{display:block;}
     <div class="twin">
       <div class="ttb">
         <div class="td re"></div><div class="td ye"></div><div class="td gr"></div>
-        <span>bash — student@s21-campus</span>
+        <span>bash — student@s21</span>
       </div>
       <div class="tbody">
-        <div class="ttext">Last login: today on pts/0<br>student@s21:~$ <span id="tcursor">█</span></div>
+        <div class="ttext">student@s21:~$ <span id="tcursor">█</span></div>
         <div class="tinstr">Экран разблокирован! Выбери команду для блокировки:</div>
         <div class="tcmds" id="tcmds"></div>
       </div>
@@ -197,13 +171,13 @@ canvas{display:block;}
 
   <!-- Menu -->
   <div class="scr show" id="menuScr">
-    <div style="font-size:42px;margin-bottom:4px;">🎓</div>
-    <h1 style="color:#3B82F6;font-size:34px;">School 21</h1>
-    <h1 style="font-size:24px;color:#ECF0F1;margin-bottom:16px;font-weight:500;">ADM Patrol</h1>
+    <div style="font-size:52px;margin-bottom:6px;">🎓</div>
+    <h1 style="color:#3B82F6">School 21</h1>
+    <h1 style="font-size:20px;font-weight:500;margin-bottom:16px;">ADM Patrol</h1>
     <p>Следи за порядком в кампусе.</p>
-    <p>Убирай нарушения до того, как их заметит ADM.</p>
-    <p style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.3);">
-      Кликай по бутылкам и светящимся экранам, чтобы устранить нарушения
+    <p>Убирай нарушения до того,<br>как их заметит ADM.</p>
+    <p style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.25);">
+      Нажимай на бутылки и светящиеся ноутбуки
     </p>
     <button class="btn g" onclick="startGame()">Начать патруль</button>
     <div id="bestlbl"></div>
@@ -211,68 +185,113 @@ canvas{display:block;}
 
   <!-- Win -->
   <div class="scr" id="winScr">
-    <div style="font-size:48px;">🏆</div>
+    <div style="font-size:52px;">🏆</div>
     <h1 style="color:#10B981;">Поздравляем!</h1>
-    <p>Все рабочие места соответствуют правилам.</p>
+    <p>Все рабочие места в порядке.</p>
     <p>ADM доволен. Вы пережили бассейн.</p>
     <div class="sg" id="winstats"></div>
-    <button class="btn g" onclick="showMenu()">В главное меню</button>
+    <button class="btn g" onclick="showMenu()">В меню</button>
   </div>
 
   <!-- Lose -->
   <div class="scr" id="loseScr">
-    <div style="font-size:48px;">😰</div>
+    <div style="font-size:52px;">😰</div>
     <h1 style="color:#EF4444;">Проверка провалена</h1>
     <p>ADM обнаружил нарушения.</p>
-    <p>Попробуйте ещё раз.</p>
     <div class="sg" id="losestats"></div>
-    <button class="btn r" onclick="startGame()">Попробовать снова</button>
+    <button class="btn r" onclick="startGame()">Ещё раз</button>
     <button class="btn sm" onclick="showMenu()">В меню</button>
   </div>
-
-  <!-- Hint -->
-  <div id="hint" style="display:none">🖱 Клик по нарушению — устрани его</div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════════════════
-//  CONSTANTS
-// ════════════════════════════════════════════════════════════
-const GW=950,GH=650;
-const COLS=5,ROWS=5;
-const DW=108,DH=54;          // desk width/height
-const CW=32,CH=20,CG=8;      // chair width/height/gap
-const WSH=DH+CG+CH;          // workstation total height = 82
-const AX=67,AY=29;           // aisle x/y
-const CS=DW+AX;              // col stride = 175
-const RS=WSH+AY;             // row stride = 111
-const GX=Math.round((GW-(COLS*DW+(COLS-1)*AX))/2); // =70
-const GY=60;                 // top offset (below HUD)
-const ADMR=13;               // ADM radius
-const LVDUR=65;              // seconds per level
-const MAXWARN=3;
-const NLEVELS=5;
+// ══════════════════════════════════════════════
+//  SETUP — вычисляем размеры под экран
+// ══════════════════════════════════════════════
+const cvs = document.getElementById('c');
+const ctx = cvs.getContext('2d');
+const root = document.getElementById('root');
 
-const LCFG=[
-  {adms:1,spd:52, smin:2,  smax:4,  maxV:3, both:false},
-  {adms:1,spd:72, smin:1.8,smax:3,  maxV:4, both:false},
-  {adms:1,spd:90, smin:1.5,smax:2.8,maxV:5, both:true },
-  {adms:2,spd:95, smin:1.2,smax:2,  maxV:5, both:true },
-  {adms:3,spd:115,smin:0.8,smax:1.5,maxV:7, both:true },
+let GW, GH, HUD_H;
+let COLS, ROWS, DW, DH, CW, CH, CG, WSH, AX, AY, CS, RS, GX, GY;
+let ADMR;
+
+function computeSizes() {
+  const sw = window.innerWidth;
+  const sh = window.innerHeight;
+  const portrait = sh > sw;
+
+  if (portrait) {
+    GW = Math.min(sw, 440);
+    GH = Math.min(sh, Math.round(GW * 1.7));
+    COLS = 4; ROWS = 5;
+    DW = 82; DH = 42;
+    CW = 26; CH = 16; CG = 6;
+    AX = 20; AY = 18;
+  } else {
+    GW = Math.min(sw, 820);
+    GH = Math.min(sh, Math.round(GW * 0.68));
+    COLS = 5; ROWS = 4;
+    DW = 100; DH = 48;
+    CW = 30; CH = 18; CG = 7;
+    AX = 40; AY = 22;
+  }
+
+  HUD_H = 44;
+  ADMR = 13;
+  WSH = DH + CG + CH;
+  CS = DW + AX;
+  RS = WSH + AY;
+  const gridW = COLS * DW + (COLS - 1) * AX;
+  const gridH = ROWS * WSH + (ROWS - 1) * AY;
+  GX = Math.round((GW - gridW) / 2);
+  GY = HUD_H + Math.round((GH - HUD_H - 16 - gridH) / 2);
+
+  cvs.width = GW;
+  cvs.height = GH;
+  const scale = Math.min(sw / GW, sh / GH);
+  cvs.style.width  = Math.round(GW * scale) + 'px';
+  cvs.style.height = Math.round(GH * scale) + 'px';
+
+  const hud = document.getElementById('hud');
+  hud.style.width  = Math.round(GW * scale) + 'px';
+  hud.style.top    = ((sh - GH * scale) / 2) + 'px';
+  hud.style.left   = ((sw - GW * scale) / 2) + 'px';
+  hud.style.height = Math.round(HUD_H * scale) + 'px';
+
+  const tstrip = document.getElementById('tstrip');
+  tstrip.style.width  = Math.round(GW * scale) + 'px';
+  tstrip.style.bottom = ((sh - GH * scale) / 2) + 'px';
+  tstrip.style.left   = ((sw - GW * scale) / 2) + 'px';
+}
+
+// ══════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════
+const LVDUR = 65;
+const MAXWARN = 3;
+const NLEVELS = 5;
+
+const LCFG = [
+  {adms:1,spd:55, smin:2,  smax:4,  maxV:2, both:false},
+  {adms:1,spd:75, smin:1.5,smax:3,  maxV:3, both:false},
+  {adms:1,spd:90, smin:1.2,smax:2.5,maxV:4, both:true},
+  {adms:2,spd:95, smin:1,  smax:2,  maxV:4, both:true},
+  {adms:3,spd:115,smin:0.7,smax:1.5,maxV:6, both:true},
 ];
 
-const CMDSETS=[
+const CMDSETS = [
   {cmds:['exit','pwd','mkdir'],   ok:'exit'},
   {cmds:['logout','ls','clear'],  ok:'logout'},
   {cmds:['lock','cat','echo'],    ok:'lock'},
-  {cmds:['suspend','git log','ls -la'],ok:'suspend'},
+  {cmds:['suspend','git log','ls'],ok:'suspend'},
   {cmds:['xlock','touch','cd ~'], ok:'xlock'},
   {cmds:['exit','nano','grep'],   ok:'exit'},
   {cmds:['logout','vim','ps'],    ok:'logout'},
   {cmds:['lock','chmod','find'],  ok:'lock'},
 ];
 
-const FMSGS=[
+const FMSGS = [
   'Минус одна бутылка.',
   'Чисто!',
   'ADM ничего не заметил.',
@@ -283,814 +302,671 @@ const FMSGS=[
   'Так держать!',
 ];
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  STATE
-// ════════════════════════════════════════════════════════════
-let cvs,ctx2;
-let phase='menu'; // menu|playing|terminal|win|lose
-let lastT=0;
-let ws=[],adms=[];
-let score=0,combo=0,maxCombo=0;
-let warnings=0;
-let level=1;
-let lvTime=0;
-let spawnT=0,nextSpawn=5;
-let termWs=null,termSet=null;
-let warnCD=0;       // cooldown between warnings
-let alertT=0,nextAlert=9;
-let btlCount=0,scrCount=0; // stats
-let ptcls=[];
-let running=false;
+// ══════════════════════════════════════════════
+let phase = 'menu';
+let lastT = 0;
+let ws = [], adms = [];
+let score = 0, combo = 0, maxCombo = 0;
+let warnings = 0;
+let level = 1;
+let lvTime = 0;
+let spawnT = 0, nextSpawn = 2;
+let termWs = null, termSet = null;
+let warnCD = 0;
+let alertT = 0, nextAlert = 9;
+let btlCount = 0, scrCount = 0;
+let ptcls = [];
 
-// Pre-computed workstation positions
-function buildWS(){
-  ws=[];
-  for(let r=0;r<ROWS;r++){
-    for(let c=0;c<COLS;c++){
-      const x=GX+c*CS, y=GY+r*RS;
+// ══════════════════════════════════════════════
+//  BUILD WORLD
+// ══════════════════════════════════════════════
+function buildWS() {
+  ws = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = GX + c * CS, y = GY + r * RS;
       ws.push({
-        id:r*COLS+c, col:c, row:r,
-        x,y,cx:x+DW/2,cy:y+DH/2,
-        vio:null,    // null|'bottle'|'screen'
-        vioAge:0,
-        alert:false, alertT:0, // ADM targeting
-        removing:false,remT:0,remType:null,
-        caught:false // flash red when caught
+        id: r * COLS + c, col: c, row: r,
+        x, y, cx: x + DW / 2, cy: y + DH / 2,
+        vio: null, vioAge: 0,
+        alert: false, alertT: 0,
+        removing: false, remT: 0, remType: null,
+        caught: false, caughtT: 0,
       });
     }
   }
 }
 
-function mkADM(x,y){
-  const cfg=LCFG[level-1];
-  return{
-    x,y,
-    angle:Math.random()*Math.PI*2,
-    spd:cfg.spd,
-    vr:165,               // vision range
-    vha:Math.PI/3.2,      // vision half-angle
-    wt:1+Math.random()*2, // wander timer
-    tgt:null,tgtT:0       // target workstation
+function mkADM(x, y) {
+  return {
+    x, y,
+    angle: Math.random() * Math.PI * 2,
+    spd: LCFG[level - 1].spd,
+    vr: Math.min(GW, GH) * 0.32,
+    vha: Math.PI / 3.2,
+    wt: 1 + Math.random() * 2,
+    tgt: null, tgtT: 0,
   };
 }
 
-function buildAdms(){
-  adms=[];
-  const cfg=LCFG[level-1];
-  // Spawn in aisles around the grid perimeter
-  const sp=[
-    {x:30,y:90},
-    {x:GW-30,y:90},
-    {x:GW/2,y:GH-22},
-    {x:30,y:GH-22},
-    {x:GW-30,y:GH-22},
+function buildAdms() {
+  adms = [];
+  const cfg = LCFG[level - 1];
+  const sp = [
+    { x: 20, y: HUD_H + 20 },
+    { x: GW - 20, y: HUD_H + 20 },
+    { x: GW / 2, y: GH - 20 },
+    { x: 20, y: GH - 20 },
+    { x: GW - 20, y: GH - 20 },
   ];
-  for(let i=0;i<cfg.adms;i++){
-    const p=sp[i%sp.length];
-    adms.push(mkADM(p.x+(Math.random()-.5)*20,p.y+(Math.random()-.5)*20));
+  for (let i = 0; i < cfg.adms; i++) {
+    const p = sp[i % sp.length];
+    adms.push(mkADM(p.x + (Math.random() - 0.5) * 20, p.y + (Math.random() - 0.5) * 20));
   }
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  GAME CONTROL
-// ════════════════════════════════════════════════════════════
-function startGame(){
+// ══════════════════════════════════════════════
+function startGame() {
   hideAll();
-  score=0;combo=0;maxCombo=0;warnings=0;level=1;lvTime=0;
-  spawnT=0;nextSpawn=2;btlCount=0;scrCount=0;
-  ptcls=[];termWs=null;warnCD=0;alertT=0;nextAlert=9;
-  buildWS();buildAdms();
-  updateHUD();updateWarnDots();updateComboEl();
-  document.getElementById('hint').style.display='block';
-  phase='playing';running=true;
+  score = 0; combo = 0; maxCombo = 0; warnings = 0;
+  level = 1; lvTime = 0; spawnT = 0; nextSpawn = 2;
+  btlCount = 0; scrCount = 0; ptcls = [];
+  termWs = null; warnCD = 0; alertT = 0; nextAlert = 9;
+  buildWS(); buildAdms();
+  updateHUD(); updateWarnDots(); updateComboEl();
+  phase = 'playing';
 }
 
-function showMenu(){
-  phase='menu';
+function showMenu() {
+  phase = 'menu';
   hideAll();
   document.getElementById('menuScr').classList.add('show');
-  document.getElementById('hint').style.display='none';
-  const b=localStorage.getItem('s21best');
-  document.getElementById('bestlbl').textContent=b?`Лучший результат: ${b} очков`:'';
+  const b = localStorage.getItem('s21best');
+  document.getElementById('bestlbl').textContent = b ? `Лучший результат: ${b} очков` : '';
 }
 
-function endGame(win){
-  running=false;
-  phase=win?'win':'lose';
-
-  const b=parseInt(localStorage.getItem('s21best')||'0');
-  if(score>b)localStorage.setItem('s21best',score);
-
-  const html=`
+function endGame(win) {
+  phase = win ? 'win' : 'lose';
+  const b = parseInt(localStorage.getItem('s21best') || '0');
+  if (score > b) localStorage.setItem('s21best', score);
+  const html = `
     <div class="si"><div class="sv" style="color:#3B82F6">${score}</div><div class="sl">Очков</div></div>
-    <div class="si"><div class="sv" style="color:#60A5FA">${btlCount}</div><div class="sl">Бутылок убрано</div></div>
-    <div class="si"><div class="sv" style="color:#34D399">${scrCount}</div><div class="sl">Экранов заблок.</div></div>
+    <div class="si"><div class="sv" style="color:#60A5FA">${btlCount}</div><div class="sl">Бутылок</div></div>
+    <div class="si"><div class="sv" style="color:#34D399">${scrCount}</div><div class="sl">Экранов</div></div>
     <div class="si"><div class="sv" style="color:#A78BFA">x${maxCombo}</div><div class="sl">Макс. комбо</div></div>`;
-
-  if(win){
-    document.getElementById('winstats').innerHTML=html;
-    document.getElementById('winScr').classList.add('show');
-  }else{
-    document.getElementById('losestats').innerHTML=html;
-    document.getElementById('loseScr').classList.add('show');
-  }
-  document.getElementById('hint').style.display='none';
+  document.getElementById(win ? 'winstats' : 'losestats').innerHTML = html;
+  document.getElementById(win ? 'winScr' : 'loseScr').classList.add('show');
 }
 
-function hideAll(){
-  ['menuScr','winScr','loseScr'].forEach(id=>document.getElementById(id).classList.remove('show'));
+function hideAll() {
+  ['menuScr','winScr','loseScr'].forEach(id => document.getElementById(id).classList.remove('show'));
   document.getElementById('term').classList.remove('show');
 }
 
-function advLevel(){
-  if(level>=NLEVELS){endGame(true);return;}
-  ws.forEach(w=>{w.vio=null;w.alert=false;w.removing=false;});
-  level++;lvTime=0;spawnT=0;nextSpawn=3;warnings=0;warnCD=0;
-  const cfg=LCFG[level-1];
-  adms.forEach(a=>a.spd=cfg.spd);
-  while(adms.length<cfg.adms){
-    adms.push(mkADM(GW/2,(Math.random()<.5?90:GH-22)));
-  }
-  updateHUD();updateWarnDots();
-  showLvlNotif();
+function advLevel() {
+  if (level >= NLEVELS) { endGame(true); return; }
+  ws.forEach(w => { w.vio = null; w.alert = false; w.removing = false; });
+  level++; lvTime = 0; spawnT = 0; nextSpawn = 2.5;
+  warnings = 0; warnCD = 0;
+  const cfg = LCFG[level - 1];
+  adms.forEach(a => a.spd = cfg.spd);
+  while (adms.length < cfg.adms)
+    adms.push(mkADM(GW / 2, GH - 20));
+  updateHUD(); updateWarnDots();
+  const n = document.getElementById('lvlnotif');
+  n.innerHTML = `Уровень ${level}<br><span style="font-size:14px;font-weight:400">Сложность растёт!</span>`;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 2400);
 }
 
-function showLvlNotif(){
-  const el=document.getElementById('lvlnotif');
-  el.innerHTML=`Уровень ${level}<br><span style="font-size:15px;font-weight:400;">Сложность возрастает!</span>`;
-  el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2600);
-}
-
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  UPDATE
-// ════════════════════════════════════════════════════════════
-function update(dt){
-  if(phase!=='playing')return;
+// ══════════════════════════════════════════════
+function update(dt) {
+  if (phase !== 'playing') return;
+  lvTime += dt;
+  if (lvTime >= LVDUR) { advLevel(); return; }
+  if (warnCD > 0) warnCD -= dt;
 
-  lvTime+=dt;
-  if(lvTime>=LVDUR){advLevel();return;}
-
-  if(warnCD>0)warnCD-=dt;
-
-  // Spawn violations
-  spawnT+=dt;
-  if(spawnT>=nextSpawn){
-    spawnT=0;
+  spawnT += dt;
+  if (spawnT >= nextSpawn) {
+    spawnT = 0;
     trySpawn();
-    const cfg=LCFG[level-1];
-    nextSpawn=cfg.smin+Math.random()*(cfg.smax-cfg.smin);
+    const cfg = LCFG[level - 1];
+    nextSpawn = cfg.smin + Math.random() * (cfg.smax - cfg.smin);
   }
 
-  // ADM alert (targeting)
-  alertT+=dt;
-  if(alertT>=nextAlert){
-    alertT=0;
-    nextAlert=6+Math.random()*8;
+  alertT += dt;
+  if (alertT >= nextAlert) {
+    alertT = 0; nextAlert = 5 + Math.random() * 7;
     doAdmAlert();
   }
 
-  // Update workstations
-  ws.forEach(w=>{
-    if(w.vio)w.vioAge+=dt;
-    if(w.alert){
-      w.alertT-=dt;
-      if(w.alertT<=0){
-        w.alert=false;
-        if(w.vio&&warnCD<=0){triggerWarn();showMsg('ADM направился сюда!','w');}
+  ws.forEach(w => {
+    if (w.vio) w.vioAge += dt;
+    if (w.alert) {
+      w.alertT -= dt;
+      if (w.alertT <= 0) {
+        w.alert = false;
+        if (w.vio && warnCD <= 0) { triggerWarn(); showMsg('ADM направился сюда!','w'); }
       }
     }
-    if(w.removing){
-      w.remT+=dt;
-      if(w.remT>.52){w.removing=false;w.remT=0;w.remType=null;}
+    if (w.removing) {
+      w.remT += dt;
+      if (w.remT > 0.5) { w.removing = false; w.remT = 0; w.remType = null; }
     }
-    if(w.caught){
-      w.caughtT-=dt;
-      if(w.caughtT<=0)w.caught=false;
-    }
+    if (w.caught) { w.caughtT -= dt; if (w.caughtT <= 0) w.caught = false; }
   });
 
-  // Update ADMs
-  adms.forEach(a=>updateADM(a,dt));
-
-  // Check vision
+  adms.forEach(a => updateADM(a, dt));
   checkVision();
 
-  // Particles
-  ptcls=ptcls.filter(p=>p.life>0);
-  ptcls.forEach(p=>{
-    p.x+=p.vx*dt;p.y+=p.vy*dt;
-    p.vy+=160*dt;
-    p.life-=dt;
-    p.a=p.life/p.ml;
+  ptcls = ptcls.filter(p => p.life > 0);
+  ptcls.forEach(p => {
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vy += 150 * dt; p.life -= dt; p.a = p.life / p.ml;
   });
 
   updateHUD();
 }
 
-function updateADM(a,dt){
-  a.wt-=dt;
-  if(a.tgt!==null){
-    a.tgtT-=dt;
-    const tw=ws[a.tgt];
-    if(!tw||a.tgtT<=0){a.tgt=null;}
-    else{
-      const dx=tw.cx-a.x,dy=tw.cy-a.y;
-      const d=Math.sqrt(dx*dx+dy*dy);
-      if(d>8)a.angle=Math.atan2(dy,dx);
-      else a.tgt=null;
+function updateADM(a, dt) {
+  a.wt -= dt;
+  if (a.tgt !== null) {
+    a.tgtT -= dt;
+    const tw = ws[a.tgt];
+    if (!tw || a.tgtT <= 0) { a.tgt = null; }
+    else {
+      const dx = tw.cx - a.x, dy = tw.cy - a.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 8) a.angle = Math.atan2(dy, dx);
+      else a.tgt = null;
     }
-  }else if(a.wt<=0){
-    a.angle+=(Math.random()-.5)*Math.PI*1.3;
-    a.wt=1.2+Math.random()*2;
+  } else if (a.wt <= 0) {
+    a.angle += (Math.random() - 0.5) * Math.PI * 1.4;
+    a.wt = 1.2 + Math.random() * 2;
   }
 
-  // Attempt movement
-  const nx=a.x+Math.cos(a.angle)*a.spd*dt;
-  const ny=a.y+Math.sin(a.angle)*a.spd*dt;
-
-  // Desk collision
-  let hit=false;
-  for(const w of ws){
-    const pad=ADMR+4;
-    if(nx>w.x-pad&&nx<w.x+DW+pad&&ny>w.y-pad&&ny<w.y+DH+pad){
-      hit=true;break;
+  const nx = a.x + Math.cos(a.angle) * a.spd * dt;
+  const ny = a.y + Math.sin(a.angle) * a.spd * dt;
+  let hit = false;
+  for (const w of ws) {
+    const pad = ADMR + 4;
+    if (nx > w.x - pad && nx < w.x + DW + pad && ny > w.y - pad && ny < w.y + DH + pad) {
+      hit = true; break;
     }
   }
+  if (!hit) { a.x = nx; a.y = ny; }
+  else { a.angle += Math.PI * (0.5 + Math.random() * 0.5); a.wt = 0; }
 
-  if(!hit){a.x=nx;a.y=ny;}
-  else{a.angle+=Math.PI*(0.5+Math.random()*.6);a.wt=0;}
-
-  // Room bounds (account for HUD at top)
-  const m=ADMR+4;
-  if(a.x<m){a.x=m;a.angle=Math.PI-a.angle;}
-  if(a.x>GW-m){a.x=GW-m;a.angle=Math.PI-a.angle;}
-  if(a.y<m+48){a.y=m+48;a.angle=-a.angle;}
-  if(a.y>GH-m-8){a.y=GH-m-8;a.angle=-a.angle;}
+  const m = ADMR + 4;
+  if (a.x < m) { a.x = m; a.angle = Math.PI - a.angle; }
+  if (a.x > GW - m) { a.x = GW - m; a.angle = Math.PI - a.angle; }
+  if (a.y < m + HUD_H) { a.y = m + HUD_H; a.angle = -a.angle; }
+  if (a.y > GH - m) { a.y = GH - m; a.angle = -a.angle; }
 }
 
-function checkVision(){
-  if(warnCD>0)return;
-  for(const w of ws){
-    if(!w.vio)continue;
-    for(const a of adms){
-      if(canSee(a,w.cx,w.cy)){
-        w.vio=null;w.alert=false;
-        w.caught=true;w.caughtT=.6;
+function checkVision() {
+  if (warnCD > 0) return;
+  for (const w of ws) {
+    if (!w.vio) continue;
+    for (const a of adms) {
+      if (canSee(a, w.cx, w.cy)) {
+        w.vio = null; w.alert = false;
+        w.caught = true; w.caughtT = 0.6;
         triggerWarn();
-        showMsg('ADM заметил нарушение! ⚠️','w');
-        warnCD=1.8;
-        spawnPtcls(w.cx,w.cy,'#EF4444',6);
+        showMsg('ADM заметил нарушение! ⚠️', 'w');
+        warnCD = 1.8;
+        spawnPtcls(w.cx, w.cy, '#EF4444', 5);
         return;
       }
     }
   }
 }
 
-function canSee(a,wx,wy){
-  const dx=wx-a.x,dy=wy-a.y;
-  const d=Math.sqrt(dx*dx+dy*dy);
-  if(d>a.vr)return false;
-  let df=Math.atan2(dy,dx)-a.angle;
-  while(df>Math.PI)df-=2*Math.PI;
-  while(df<-Math.PI)df+=2*Math.PI;
-  return Math.abs(df)<=a.vha;
+function canSee(a, wx, wy) {
+  const dx = wx - a.x, dy = wy - a.y;
+  const d = Math.sqrt(dx * dx + dy * dy);
+  if (d > a.vr) return false;
+  let df = Math.atan2(dy, dx) - a.angle;
+  while (df > Math.PI) df -= 2 * Math.PI;
+  while (df < -Math.PI) df += 2 * Math.PI;
+  return Math.abs(df) <= a.vha;
 }
 
-function triggerWarn(){
+function triggerWarn() {
   warnings++;
   updateWarnDots();
-  if(warnings>=MAXWARN){
-    setTimeout(()=>endGame(false),400);
+  if (warnings >= MAXWARN) setTimeout(() => endGame(false), 400);
+}
+
+function updateWarnDots() {
+  for (let i = 0; i < MAXWARN; i++) {
+    const d = document.getElementById('wd' + i);
+    if (d) d.classList.toggle('on', i < warnings);
   }
 }
 
-function updateWarnDots(){
-  for(let i=0;i<MAXWARN;i++){
-    const d=document.getElementById('wd'+i);
-    if(d)d.classList.toggle('on',i<warnings);
+function trySpawn() {
+  const cfg = LCFG[level - 1];
+  if (ws.filter(w => w.vio).length >= cfg.maxV) return;
+  const avail = ws.filter(w => !w.vio && !w.removing);
+  if (!avail.length) return;
+  const w = avail[Math.floor(Math.random() * avail.length)];
+  w.vio = cfg.both && Math.random() < 0.45 ? 'screen' : 'bottle';
+  w.vioAge = 0;
+}
+
+function doAdmAlert() {
+  const viol = ws.filter(w => w.vio && !w.alert);
+  const target = viol.length ? viol[Math.floor(Math.random() * viol.length)]
+                             : ws[Math.floor(Math.random() * ws.length)];
+  if (!target) return;
+  target.alert = true;
+  target.alertT = 2.5 + Math.random() * 0.8;
+  if (adms.length > 0) {
+    const a = adms[Math.floor(Math.random() * adms.length)];
+    a.tgt = target.id; a.tgtT = target.alertT + 0.3;
   }
 }
 
-function trySpawn(){
-  const cfg=LCFG[level-1];
-  const active=ws.filter(w=>w.vio).length;
-  if(active>=cfg.maxV)return;
-  const avail=ws.filter(w=>!w.vio&&!w.removing);
-  if(!avail.length)return;
-  const w=avail[Math.floor(Math.random()*avail.length)];
-  let type='bottle';
-  if(cfg.both)type=Math.random()<.45?'bottle':'screen';
-  w.vio=type;w.vioAge=0;
+// ══════════════════════════════════════════════
+//  INPUT  (touch + click)
+// ══════════════════════════════════════════════
+function getCanvasXY(clientX, clientY) {
+  const r = cvs.getBoundingClientRect();
+  return {
+    x: (clientX - r.left) * (GW / r.width),
+    y: (clientY - r.top)  * (GH / r.height),
+  };
 }
 
-function doAdmAlert(){
-  const viol=ws.filter(w=>w.vio&&!w.alert);
-  const rnd=ws[Math.floor(Math.random()*ws.length)];
-  const target=viol.length>0?viol[Math.floor(Math.random()*viol.length)]:rnd;
-  if(!target)return;
-  target.alert=true;
-  target.alertT=2.4+Math.random()*.8;
-  if(adms.length>0){
-    const a=adms[Math.floor(Math.random()*adms.length)];
-    a.tgt=target.id;
-    a.tgtT=target.alertT+.3;
-  }
-}
-
-// ════════════════════════════════════════════════════════════
-//  INPUT
-// ════════════════════════════════════════════════════════════
-function onClick(e){
-  if(phase!=='playing')return;
-  const rect=cvs.getBoundingClientRect();
-  const sx=GW/rect.width,sy=GH/rect.height;
-  const mx=(e.clientX-rect.left)*sx;
-  const my=(e.clientY-rect.top)*sy;
-  for(const w of ws){
-    if(!w.vio)continue;
-    if(mx>=w.x-4&&mx<=w.x+DW+4&&my>=w.y-4&&my<=w.y+DH+CG+CH+4){
-      fixVio(w,mx,my);break;
+function handleInput(clientX, clientY) {
+  if (phase !== 'playing') return;
+  const { x: mx, y: my } = getCanvasXY(clientX, clientY);
+  for (const w of ws) {
+    if (!w.vio) continue;
+    const pad = 8;
+    if (mx >= w.x - pad && mx <= w.x + DW + pad &&
+        my >= w.y - pad && my <= w.y + DH + CG + CH + pad) {
+      if (w.vio === 'bottle') removeBottle(w);
+      else openTerm(w);
+      break;
     }
   }
 }
 
-function fixVio(w,mx,my){
-  if(w.vio==='bottle') removeBottle(w);
-  else openTerm(w);
-}
+cvs.addEventListener('click', e => handleInput(e.clientX, e.clientY));
+cvs.addEventListener('touchstart', e => {
+  e.preventDefault();
+  handleInput(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
 
-function removeBottle(w){
-  const cc=w.alert;
-  w.vio=null;w.alert=false;
-  w.removing=true;w.remT=0;w.remType='bottle';
+// ══════════════════════════════════════════════
+//  FIX VIOLATIONS
+// ══════════════════════════════════════════════
+function removeBottle(w) {
+  const cc = w.alert;
+  w.vio = null; w.alert = false;
+  w.removing = true; w.remT = 0; w.remType = 'bottle';
   btlCount++;
-  let pts=10;
-  if(cc){pts+=20;showMsg('Close Call! +30','b');}
-  addScore(pts,w.cx,w.cy);
+  let pts = 10;
+  if (cc) { pts += 20; showMsg('Close Call! +30', 'b'); }
+  addScore(pts, w.cx, w.cy);
   incCombo();
-  if(Math.random()<.35)showMsg(FMSGS[Math.floor(Math.random()*4)],'s');
-  spawnPtcls(w.cx,w.cy,'#60A5FA',9);
+  if (Math.random() < 0.35) showMsg(FMSGS[Math.floor(Math.random() * 4)], 's');
+  spawnPtcls(w.cx, w.cy, '#60A5FA', 8);
 }
 
-function openTerm(w){
-  termWs=w;
-  termSet=CMDSETS[Math.floor(Math.random()*CMDSETS.length)];
-  const el=document.getElementById('tcmds');
-  el.innerHTML='';
-  const shuf=[...termSet.cmds].sort(()=>Math.random()-.5);
-  shuf.forEach(cmd=>{
-    const b=document.createElement('button');
-    b.className='cb';b.textContent=cmd;
-    b.onclick=()=>handleCmd(cmd,b);
+function openTerm(w) {
+  termWs = w;
+  termSet = CMDSETS[Math.floor(Math.random() * CMDSETS.length)];
+  const el = document.getElementById('tcmds');
+  el.innerHTML = '';
+  [...termSet.cmds].sort(() => Math.random() - 0.5).forEach(cmd => {
+    const b = document.createElement('button');
+    b.className = 'cb'; b.textContent = cmd;
+    b.addEventListener('click', () => handleCmd(cmd, b));
+    b.addEventListener('touchstart', e => { e.preventDefault(); handleCmd(cmd, b); }, { passive: false });
     el.appendChild(b);
   });
   document.getElementById('term').classList.add('show');
-  phase='terminal';
+  phase = 'terminal';
 }
 
-function handleCmd(cmd,btn){
-  if(cmd===termSet.ok){
+function handleCmd(cmd, btn) {
+  if (cmd === termSet.ok) {
     btn.classList.add('ok');
-    setTimeout(()=>closeTerm(true),320);
-  }else{
+    setTimeout(() => closeTerm(true), 280);
+  } else {
     btn.classList.add('err');
-    btn.disabled=true;
-    showMsg('Неверная команда! Попробуй ещё.','w');
-    combo=Math.max(0,combo-1);
+    btn.disabled = true;
+    showMsg('Неверная команда!', 'w');
+    combo = Math.max(0, combo - 1);
     updateComboEl();
-    setTimeout(()=>{btn.classList.remove('err');btn.disabled=false;},640);
+    setTimeout(() => { btn.classList.remove('err'); btn.disabled = false; }, 600);
   }
 }
 
-function closeTerm(ok){
+function closeTerm(ok) {
   document.getElementById('term').classList.remove('show');
-  phase='playing';
-  if(ok&&termWs){
-    const cc=termWs.alert;
-    termWs.vio=null;termWs.alert=false;
-    termWs.removing=true;termWs.remT=0;termWs.remType='screen';
+  phase = 'playing';
+  if (ok && termWs) {
+    const cc = termWs.alert;
+    termWs.vio = null; termWs.alert = false;
+    termWs.removing = true; termWs.remT = 0; termWs.remType = 'screen';
     scrCount++;
-    let pts=15;
-    if(cc){pts+=20;showMsg('Close Call! +35','b');}
-    addScore(pts,termWs.cx,termWs.cy);
+    let pts = 15;
+    if (cc) { pts += 20; showMsg('Close Call! +35', 'b'); }
+    addScore(pts, termWs.cx, termWs.cy);
     incCombo();
-    if(Math.random()<.4)showMsg(FMSGS[4+Math.floor(Math.random()*4)],'s');
-    spawnPtcls(termWs.cx,termWs.cy,'#34D399',11);
+    if (Math.random() < 0.4) showMsg(FMSGS[4 + Math.floor(Math.random() * 4)], 's');
+    spawnPtcls(termWs.cx, termWs.cy, '#34D399', 10);
   }
-  termWs=null;
+  termWs = null;
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  SCORE / COMBO
-// ════════════════════════════════════════════════════════════
-function getMult(){
-  if(combo>=10)return 5;
-  if(combo>=6) return 3;
-  if(combo>=3) return 2;
+// ══════════════════════════════════════════════
+function getMult() {
+  if (combo >= 10) return 5;
+  if (combo >= 6)  return 3;
+  if (combo >= 3)  return 2;
   return 1;
 }
 
-function addScore(pts,cx,cy){
-  const m=getMult();
-  const tot=pts*m;
-  score+=tot;
-  const pop=document.createElement('div');
-  pop.className='sp';
-  pop.style.left=(cx/GW*100)+'%';
-  pop.style.top=(cy/GH*100)+'%';
-  pop.style.color=m>1?'#F59E0B':'#34D399';
-  pop.textContent=`+${tot}`+(m>1?` x${m}`:'');
-  document.getElementById('wrap').appendChild(pop);
-  setTimeout(()=>pop.remove(),980);
+function addScore(pts, cx, cy) {
+  const m = getMult(), tot = pts * m;
+  score += tot;
+  const r = cvs.getBoundingClientRect();
+  const sx = r.left + cx * (r.width / GW);
+  const sy = r.top  + cy * (r.height / GH);
+  const pop = document.createElement('div');
+  pop.className = 'sp';
+  pop.style.cssText = `left:${sx}px;top:${sy}px;position:fixed;color:${m > 1 ? '#F59E0B' : '#34D399'}`;
+  pop.textContent = `+${tot}${m > 1 ? ' x' + m : ''}`;
+  document.body.appendChild(pop);
+  setTimeout(() => pop.remove(), 950);
 }
 
-function incCombo(){
+function incCombo() {
   combo++;
-  maxCombo=Math.max(maxCombo,combo);
-  if(combo===3)showMsg('Комбо x2! 🔥','c');
-  else if(combo===6)showMsg('Комбо x3! 💫','c');
-  else if(combo===10)showMsg('Комбо x5! ⚡','c');
+  maxCombo = Math.max(maxCombo, combo);
+  if (combo === 3)  showMsg('Комбо x2! 🔥', 'c');
+  if (combo === 6)  showMsg('Комбо x3! 💫', 'c');
+  if (combo === 10) showMsg('Комбо x5! ⚡', 'c');
   updateComboEl();
 }
 
-function updateComboEl(){
-  const el=document.getElementById('comboEl');
-  const m=getMult();
-  el.textContent='x'+m;
-  el.classList.toggle('lit',m>1);
-  if(m>1){el.style.transform='scale(1.25)';setTimeout(()=>el.style.transform='',200);}
+function updateComboEl() {
+  const el = document.getElementById('comboEl');
+  const m = getMult();
+  el.textContent = 'x' + m;
+  el.classList.toggle('lit', m > 1);
 }
 
-// ════════════════════════════════════════════════════════════
-//  MESSAGES
-// ════════════════════════════════════════════════════════════
-function showMsg(txt,type='i'){
-  const c=document.getElementById('msgs');
-  if(c.children.length>5)c.firstChild.remove();
-  const d=document.createElement('div');
-  d.className=`mg ${type}`;d.textContent=txt;
+// ══════════════════════════════════════════════
+//  MESSAGES / HUD
+// ══════════════════════════════════════════════
+function showMsg(txt, type = 'i') {
+  const c = document.getElementById('msgs');
+  if (c.children.length > 4) c.firstChild.remove();
+  const d = document.createElement('div');
+  d.className = `mg ${type}`; d.textContent = txt;
   c.appendChild(d);
-  setTimeout(()=>d.remove(),2100);
+  setTimeout(() => d.remove(), 2100);
 }
 
-// ════════════════════════════════════════════════════════════
-//  HUD
-// ════════════════════════════════════════════════════════════
-function updateHUD(){
-  document.getElementById('hlvl').textContent=level;
-  document.getElementById('hscore').textContent=score;
-  document.getElementById('htime').textContent=Math.ceil(LVDUR-lvTime);
-  const p=Math.max(0,(LVDUR-lvTime)/LVDUR);
-  document.getElementById('tbar').style.width=(p*100)+'%';
+function updateHUD() {
+  document.getElementById('hlvl').textContent = level;
+  document.getElementById('hscore').textContent = score;
+  document.getElementById('htime').textContent = Math.ceil(LVDUR - lvTime);
+  document.getElementById('tbar').style.width = (Math.max(0, (LVDUR - lvTime) / LVDUR) * 100) + '%';
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  PARTICLES
-// ════════════════════════════════════════════════════════════
-function spawnPtcls(x,y,col,n){
-  for(let i=0;i<n;i++){
-    const ang=Math.random()*Math.PI*2;
-    const spd=45+Math.random()*110;
-    const life=.5+Math.random()*.4;
-    ptcls.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-70,
-      col,sz:2.5+Math.random()*3.5,life,ml:life,a:1});
+// ══════════════════════════════════════════════
+function spawnPtcls(x, y, col, n) {
+  for (let i = 0; i < n; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 40 + Math.random() * 100;
+    const life = 0.5 + Math.random() * 0.4;
+    ptcls.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 60,
+      col, sz: 2 + Math.random() * 3, life, ml: life, a: 1 });
   }
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  RENDER
-// ════════════════════════════════════════════════════════════
-function loop(ts){
-  const dt=Math.min((ts-lastT)/1000,.05);
-  lastT=ts;
+// ══════════════════════════════════════════════
+function loop(ts) {
+  const dt = Math.min((ts - lastT) / 1000, 0.05);
+  lastT = ts;
   update(dt);
-  render(ts/1000);
+  render(ts / 1000);
   requestAnimationFrame(loop);
 }
 
-function render(t){
-  const c=ctx2;
-  c.clearRect(0,0,GW,GH);
-  if(phase==='menu'||phase==='win'||phase==='lose'){drawBg(c,t);return;}
-  drawRoom(c,t);
-  drawAllWS(c,t);
-  drawAllAdms(c,t);
-  drawPtcls(c);
-}
-
-function drawBg(c,t){
-  c.fillStyle='#0B0C1A';
-  c.fillRect(0,0,GW,GH);
-  c.strokeStyle='rgba(255,255,255,.025)';
-  c.lineWidth=1;
-  for(let x=0;x<GW;x+=45){
-    c.beginPath();c.moveTo(x,0);c.lineTo(x,GH);c.stroke();
-  }
-  for(let y=0;y<GH;y+=45){
-    c.beginPath();c.moveTo(0,y);c.lineTo(GW,y);c.stroke();
-  }
-  // Floating dots
-  for(let i=0;i<8;i++){
-    const px=((i*173+t*18)%GW+GW)%GW;
-    const py=((i*97+t*12)%GH+GH)%GH;
-    const a=Math.sin(t*1.3+i)*.3+.15;
-    c.fillStyle=`rgba(59,130,246,${a})`;
-    c.beginPath();c.arc(px,py,2,0,Math.PI*2);c.fill();
-  }
-}
-
-function drawRoom(c,t){
-  // Floor
-  c.fillStyle='#111223';
-  c.fillRect(0,0,GW,GH);
-
-  // Room interior
-  const g=c.createLinearGradient(0,46,0,GH-8);
-  g.addColorStop(0,'#1A1B30');g.addColorStop(1,'#14152A');
-  c.fillStyle=g;
-  rr(c,14,46,GW-28,GH-54,8,'fill');
-
-  // Subtle floor grid
-  c.strokeStyle='rgba(255,255,255,.025)';c.lineWidth=1;
-  for(let x=GX;x<=GX+COLS*CS;x+=CS/3){
-    c.beginPath();c.moveTo(x,50);c.lineTo(x,GH-16);c.stroke();
-  }
-  for(let y=GY;y<=GY+ROWS*RS;y+=RS/3){
-    c.beginPath();c.moveTo(18,y);c.lineTo(GW-18,y);c.stroke();
-  }
-
-  // Room border
-  c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=1.5;
-  rr(c,14,46,GW-28,GH-54,8,'stroke');
-
-  // Label
-  c.font='10px sans-serif';
-  c.fillStyle='rgba(255,255,255,.1)';
-  c.textAlign='right';
-  c.fillText('SCHOOL 21 — CAMPUS',GW-22,44);
-  c.textAlign='left';
-}
-
-function drawAllWS(c,t){
-  ws.forEach(w=>drawWS(c,w,t));
-}
-
-function drawWS(c,w,t){
-  const {x,y}=w;
-  const cx2=x+DW/2,chairX=x+DW/2-CW/2,chairY=y+DH+CG;
-
-  // Chair shadow
-  c.fillStyle='rgba(0,0,0,.2)';
-  c.fillRect(chairX+2,chairY+2,CW,CH);
-
-  // Chair
-  c.fillStyle='#3A2D22';
-  rr(c,chairX,chairY,CW,CH,4,'fill');
-  c.strokeStyle='#2A1F18';c.lineWidth=1;
-  rr(c,chairX,chairY,CW,CH,4,'stroke');
-
-  // Chair highlight
-  c.fillStyle='rgba(255,255,255,.07)';
-  rr(c,chairX+2,chairY+2,CW-4,5,2,'fill');
-
-  // Desk shadow
-  c.fillStyle='rgba(0,0,0,.22)';
-  c.fillRect(x+4,y+4,DW,DH);
-
-  // Desk surface
-  const dg=c.createLinearGradient(x,y,x,y+DH);
-  dg.addColorStop(0,'#C9A478');dg.addColorStop(1,'#A07240');
-  c.fillStyle=dg;
-  rr(c,x,y,DW,DH,5,'fill');
-  c.strokeStyle='#8B5E30';c.lineWidth=1.5;
-  rr(c,x,y,DW,DH,5,'stroke');
-
-  // Desk highlight strip
-  c.fillStyle='rgba(255,255,255,.1)';
-  rr(c,x+3,y+3,DW-6,9,3,'fill');
-
-  // Laptop base
-  const lx=x+DW/2-26,ly=y+DH/2-17,lw=52,lh=34;
-  c.fillStyle='#252535';
-  rr(c,lx,ly,lw,lh,3,'fill');
-  c.strokeStyle='#353548';c.lineWidth=1;
-  rr(c,lx,ly,lw,lh,3,'stroke');
-
-  // Screen area
-  const sx=lx+3,sy=ly+3,sw=lw-6,sh=lh-8;
-  const isScr=w.vio==='screen';
-  const isRemScr=w.removing&&w.remType==='screen';
-  let scrAlpha=1;
-  if(isRemScr)scrAlpha=Math.max(0,1-w.remT/.5);
-
-  c.save();
-  c.globalAlpha*=scrAlpha;
-
-  if(isScr){
-    const pulse=Math.sin(t*2.8)*.12+.88;
-    c.shadowColor='#4488FF';
-    c.shadowBlur=16*pulse;
-    const sg=c.createLinearGradient(sx,sy,sx,sy+sh);
-    sg.addColorStop(0,`hsl(215,100%,${52+pulse*14}%)`);
-    sg.addColorStop(1,`hsl(230,90%,${42+pulse*10}%)`);
-    c.fillStyle=sg;
-    c.fillRect(sx,sy,sw,sh);
-    c.shadowBlur=0;
-    // Terminal text
-    c.fillStyle='#00E676';c.font='7px monospace';
-    c.fillText('$_',sx+3,sy+12);
-    c.fillStyle='rgba(0,230,118,.4)';
-    c.fillRect(sx,sy+sh-4,sw,4);
-  }else{
-    c.fillStyle='#080818';
-    c.fillRect(sx,sy,sw,sh);
-    // Subtle glare
-    c.fillStyle='rgba(255,255,255,.035)';
-    c.fillRect(sx,sy,sw,5);
-  }
-  c.restore();
-
-  // Bottle violation
-  if(w.vio==='bottle'){
-    const ba=w.removing&&w.remType==='bottle'?Math.max(0,1-w.remT/.5):1;
-    drawBottle(c,x+DW-25,y+8,ba);
-  }
-
-  // Caught flash
-  if(w.caught){
-    const a=Math.min(1,w.caughtT/.3)*.35;
-    c.fillStyle=`rgba(239,68,68,${a})`;
-    rr(c,x-2,y-2,DW+4,DH+4,6,'fill');
-  }
-
-  // ADM alert indicator
-  if(w.alert){
-    const pulse=Math.sin(t*7)*.35+.65;
-    const prog=Math.max(0,w.alertT/3);
-
-    // Glow ring
-    c.strokeStyle=`rgba(239,68,68,${pulse*.7})`;
-    c.lineWidth=2;
-    c.beginPath();
-    c.arc(x+DW+10,y+DH/2,10,-Math.PI/2,-Math.PI/2+prog*Math.PI*2);
-    c.stroke();
-
-    // Exclamation
-    c.font=`bold ${14+pulse*3}px sans-serif`;
-    c.textAlign='center';
-    c.fillStyle=`rgba(239,68,68,${pulse})`;
-    c.fillText('!',x+DW+10,y+DH/2+4);
-    c.textAlign='left';
-  }
-}
-
-function drawBottle(c,x,y,alpha){
-  c.save();
-  c.globalAlpha*=alpha;
-  c.translate(x,y);
-
-  // Body gradient
-  const bg=c.createLinearGradient(-6,0,6,0);
-  bg.addColorStop(0,'rgba(130,195,255,.88)');
-  bg.addColorStop(.45,'rgba(195,230,255,.96)');
-  bg.addColorStop(1,'rgba(90,160,235,.82)');
-
-  // Body
-  c.fillStyle=bg;c.strokeStyle='rgba(70,140,220,.75)';c.lineWidth=1;
-  rr(c,-6,9,12,20,[5,5,6,6],'fill');
-  rr(c,-6,9,12,20,[5,5,6,6],'stroke');
-
-  // Neck
-  c.fillStyle='rgba(130,195,255,.82)';
-  rr(c,-4,3,8,8,2,'fill');rr(c,-4,3,8,8,2,'stroke');
-
-  // Cap
-  c.fillStyle='#3B82F6';
-  rr(c,-4,0,8,5,[2,2,0,0],'fill');
-
-  // Water fill
-  c.fillStyle='rgba(60,130,240,.22)';
-  c.fillRect(-5,20,10,8);
-
-  // Highlight
-  c.fillStyle='rgba(255,255,255,.45)';
-  c.beginPath();c.ellipse(-2,15,1.8,5,0,0,Math.PI*2);c.fill();
-
-  c.restore();
-}
-
-function drawAllAdms(c,t){
-  adms.forEach((a,i)=>drawADM(c,a,t,i));
-}
-
-function drawADM(c,a,t,idx){
-  const bob=Math.sin(t*4+idx*.9)*2;
-
-  // Vision cone
-  c.save();
-  c.beginPath();
-  c.moveTo(a.x,a.y);
-  c.arc(a.x,a.y,a.vr,a.angle-a.vha,a.angle+a.vha);
-  c.closePath();
-  c.fillStyle='rgba(253,224,71,.1)';c.fill();
-  c.strokeStyle='rgba(253,224,71,.28)';c.lineWidth=1;c.stroke();
-  c.restore();
-
-  // Ground shadow
-  c.save();c.globalAlpha=.28;
-  c.fillStyle='#000';
-  c.beginPath();c.ellipse(a.x+2,a.y+14+bob,13,5,0,0,Math.PI*2);c.fill();
-  c.restore();
-
-  // Body
-  const bodg=c.createRadialGradient(a.x-3,a.y-2+bob,2,a.x,a.y+4+bob,13);
-  bodg.addColorStop(0,'#3B5A80');bodg.addColorStop(1,'#1A2E44');
-  c.fillStyle=bodg;
-  c.beginPath();c.ellipse(a.x,a.y+5+bob,11,13,0,0,Math.PI*2);c.fill();
-
-  // Belt strip
-  c.fillStyle='#DC2626';
-  c.fillRect(a.x-8,a.y+3+bob,16,4);
-
-  // Head
-  const hx=a.x+Math.cos(a.angle)*6;
-  const hy=a.y+Math.sin(a.angle)*6-9+bob;
-  c.fillStyle='#F4C896';
-  c.beginPath();c.arc(hx,hy,9,0,Math.PI*2);c.fill();
-  c.strokeStyle='#D4A870';c.lineWidth=1;c.stroke();
-
-  // Eyes
-  const e1x=hx+Math.cos(a.angle+.5)*4,e1y=hy+Math.sin(a.angle+.5)*4;
-  const e2x=hx+Math.cos(a.angle-.5)*4,e2y=hy+Math.sin(a.angle-.5)*4;
-  c.fillStyle='#1A1A2E';
-  c.beginPath();c.arc(e1x,e1y,2,0,Math.PI*2);c.arc(e2x,e2y,2,0,Math.PI*2);c.fill();
-
-  // ADM label
-  c.font='bold 9px sans-serif';c.textAlign='center';
-  c.fillStyle='#EF4444';
-  c.fillText('ADM',a.x,a.y-22+bob);
-  c.textAlign='left';
-}
-
-function drawPtcls(c){
-  ptcls.forEach(p=>{
-    c.save();c.globalAlpha=p.a;
-    c.fillStyle=p.col;
-    c.beginPath();c.arc(p.x,p.y,p.sz*p.a,0,Math.PI*2);c.fill();
-    c.restore();
+function render(t) {
+  ctx.clearRect(0, 0, GW, GH);
+  if (phase === 'menu' || phase === 'win' || phase === 'lose') { drawBg(t); return; }
+  drawRoom(t);
+  ws.forEach(w => drawWS(w, t));
+  adms.forEach((a, i) => drawADM(a, t, i));
+  ptcls.forEach(p => {
+    ctx.save(); ctx.globalAlpha = p.a;
+    ctx.fillStyle = p.col;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * p.a, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
   });
 }
 
-// ════════════════════════════════════════════════════════════
-//  UTILS
-// ════════════════════════════════════════════════════════════
-function rr(c,x,y,w,h,r,op){
-  // Rounded rect - cross-browser compatible
-  if(!Array.isArray(r))r=[r,r,r,r]; // [tl,tr,br,bl]
-  c.beginPath();
-  c.moveTo(x+r[0],y);
-  c.lineTo(x+w-r[1],y);
-  c.arcTo(x+w,y,x+w,y+r[1],r[1]);
-  c.lineTo(x+w,y+h-r[2]);
-  c.arcTo(x+w,y+h,x+w-r[2],y+h,r[2]);
-  c.lineTo(x+r[3],y+h);
-  c.arcTo(x,y+h,x,y+h-r[3],r[3]);
-  c.lineTo(x,y+r[0]);
-  c.arcTo(x,y,x+r[0],y,r[0]);
-  c.closePath();
-  if(op==='fill')c.fill();
-  else if(op==='stroke')c.stroke();
+function drawBg(t) {
+  ctx.fillStyle = '#09091a';
+  ctx.fillRect(0, 0, GW, GH);
+  ctx.strokeStyle = 'rgba(255,255,255,.025)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < GW; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,GH); ctx.stroke(); }
+  for (let y = 0; y < GH; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(GW,y); ctx.stroke(); }
 }
 
-// ════════════════════════════════════════════════════════════
-//  BOOT
-// ════════════════════════════════════════════════════════════
-window.onload=()=>{
-  cvs=document.getElementById('c');
-  ctx2=cvs.getContext('2d');
-  cvs.addEventListener('click',onClick);
+function drawRoom(t) {
+  ctx.fillStyle = '#111223';
+  ctx.fillRect(0, 0, GW, GH);
+  const g = ctx.createLinearGradient(0, HUD_H, 0, GH);
+  g.addColorStop(0, '#1a1b30'); g.addColorStop(1, '#14152a');
+  ctx.fillStyle = g;
+  rr(ctx, 10, HUD_H + 4, GW - 20, GH - HUD_H - 12, 8, 'fill');
+  ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+  rr(ctx, 10, HUD_H + 4, GW - 20, GH - HUD_H - 12, 8, 'stroke');
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
+  ctx.fillText('SCHOOL 21', GW - 14, HUD_H + 16);
+  ctx.textAlign = 'left';
+}
 
-  // Responsive sizing
-  function resize(){
-    const mw=Math.min(window.innerWidth-12,950);
-    const mh=Math.min(window.innerHeight-8,650);
-    const scale=Math.min(mw/950,mh/650);
-    const wrap=document.getElementById('wrap');
-    wrap.style.width=(950*scale)+'px';
-    wrap.style.height=(650*scale)+'px';
-    cvs.style.width=(950*scale)+'px';
-    cvs.style.height=(650*scale)+'px';
+function drawWS(w, t) {
+  const { x, y } = w;
+  const chairX = x + DW / 2 - CW / 2, chairY = y + DH + CG;
+
+  // Chair
+  ctx.fillStyle = 'rgba(0,0,0,.18)';
+  ctx.fillRect(chairX + 2, chairY + 2, CW, CH);
+  ctx.fillStyle = '#3a2d22';
+  rr(ctx, chairX, chairY, CW, CH, 4, 'fill');
+  ctx.strokeStyle = '#2a1f18'; ctx.lineWidth = 1;
+  rr(ctx, chairX, chairY, CW, CH, 4, 'stroke');
+
+  // Desk shadow + surface
+  ctx.fillStyle = 'rgba(0,0,0,.2)';
+  ctx.fillRect(x + 3, y + 3, DW, DH);
+  const dg = ctx.createLinearGradient(x, y, x, y + DH);
+  dg.addColorStop(0, '#c9a478'); dg.addColorStop(1, '#a07240');
+  ctx.fillStyle = dg;
+  rr(ctx, x, y, DW, DH, 5, 'fill');
+  ctx.strokeStyle = '#8b5e30'; ctx.lineWidth = 1.5;
+  rr(ctx, x, y, DW, DH, 5, 'stroke');
+  ctx.fillStyle = 'rgba(255,255,255,.1)';
+  rr(ctx, x + 3, y + 3, DW - 6, 8, 3, 'fill');
+
+  // Laptop
+  const lx = x + DW / 2 - DW * 0.26, ly = y + DH / 2 - DH * 0.38;
+  const lw = DW * 0.52, lh = DH * 0.68;
+  ctx.fillStyle = '#252535';
+  rr(ctx, lx, ly, lw, lh, 3, 'fill');
+  ctx.strokeStyle = '#353548'; ctx.lineWidth = 1;
+  rr(ctx, lx, ly, lw, lh, 3, 'stroke');
+
+  // Screen
+  const sx = lx + 2, sy = ly + 2, sw2 = lw - 4, sh2 = lh - 6;
+  const isScr = w.vio === 'screen';
+  const remScr = w.removing && w.remType === 'screen';
+  const scrA = remScr ? Math.max(0, 1 - w.remT / 0.5) : 1;
+
+  ctx.save(); ctx.globalAlpha *= scrA;
+  if (isScr) {
+    const pulse = Math.sin(t * 2.8) * 0.12 + 0.88;
+    ctx.shadowColor = '#4488ff'; ctx.shadowBlur = 14 * pulse;
+    const sg = ctx.createLinearGradient(sx, sy, sx, sy + sh2);
+    sg.addColorStop(0, `hsl(215,100%,${52 + pulse * 14}%)`);
+    sg.addColorStop(1, `hsl(230,90%,${40 + pulse * 10}%)`);
+    ctx.fillStyle = sg;
+    ctx.fillRect(sx, sy, sw2, sh2);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#00e676'; ctx.font = `${Math.max(6, lh * 0.22)}px monospace`;
+    ctx.fillText('$_', sx + 3, sy + sh2 * 0.55);
+  } else {
+    ctx.fillStyle = '#080818'; ctx.fillRect(sx, sy, sw2, sh2);
+    ctx.fillStyle = 'rgba(255,255,255,.03)'; ctx.fillRect(sx, sy, sw2, 3);
   }
-  resize();
-  window.addEventListener('resize',resize);
+  ctx.restore();
 
-  // Show best score
-  const b=localStorage.getItem('s21best');
-  if(b)document.getElementById('bestlbl').textContent=`Лучший результат: ${b} очков`;
+  // Bottle
+  if (w.vio === 'bottle') {
+    const ba = w.removing && w.remType === 'bottle' ? Math.max(0, 1 - w.remT / 0.5) : 1;
+    drawBottle(x + DW - DW * 0.24, y + DH * 0.14, DH * 0.8, ba);
+  }
 
-  requestAnimationFrame(ts=>{lastT=ts;requestAnimationFrame(loop);});
-};
+  // Caught flash
+  if (w.caught) {
+    ctx.fillStyle = `rgba(239,68,68,${Math.min(1, w.caughtT / 0.3) * 0.3})`;
+    rr(ctx, x - 2, y - 2, DW + 4, DH + 4, 6, 'fill');
+  }
+
+  // ADM alert
+  if (w.alert) {
+    const pulse = Math.sin(t * 7) * 0.35 + 0.65;
+    const prog = Math.max(0, w.alertT / 3);
+    const ix = x + DW + 10, iy = y + DH / 2;
+    ctx.strokeStyle = `rgba(239,68,68,${pulse * 0.7})`; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(ix, iy, 9, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2);
+    ctx.stroke();
+    ctx.font = `bold ${12 + pulse * 2}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.fillStyle = `rgba(239,68,68,${pulse})`;
+    ctx.fillText('!', ix, iy + 5);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawBottle(x, y, h, alpha) {
+  const w2 = h * 0.32;
+  ctx.save(); ctx.globalAlpha *= alpha;
+  ctx.translate(x, y);
+  const bg = ctx.createLinearGradient(-w2 / 2, 0, w2 / 2, 0);
+  bg.addColorStop(0, 'rgba(130,195,255,.86)');
+  bg.addColorStop(.45, 'rgba(200,235,255,.96)');
+  bg.addColorStop(1, 'rgba(90,160,235,.8)');
+  ctx.fillStyle = bg; ctx.strokeStyle = 'rgba(70,140,220,.7)'; ctx.lineWidth = 1;
+  rr(ctx, -w2/2, h*0.35, w2, h*0.62, [w2*.35, w2*.35, w2*.4, w2*.4], 'fill');
+  rr(ctx, -w2/2, h*0.35, w2, h*0.62, [w2*.35, w2*.35, w2*.4, w2*.4], 'stroke');
+  ctx.fillStyle = 'rgba(130,195,255,.82)';
+  rr(ctx, -w2*.35, h*0.12, w2*.7, h*0.25, 2, 'fill');
+  rr(ctx, -w2*.35, h*0.12, w2*.7, h*0.25, 2, 'stroke');
+  ctx.fillStyle = '#3b82f6';
+  rr(ctx, -w2*.35, 0, w2*.7, h*0.14, [2,2,0,0], 'fill');
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  ctx.beginPath(); ctx.ellipse(-w2*.12, h*.58, w2*.12, h*.18, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(60,130,240,.22)';
+  ctx.fillRect(-w2/2+1, h*.7, w2-2, h*.24);
+  ctx.restore();
+}
+
+function drawADM(a, t, idx) {
+  const bob = Math.sin(t * 4 + idx * 0.9) * 2;
+  // Vision cone
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(a.x, a.y);
+  ctx.arc(a.x, a.y, a.vr, a.angle - a.vha, a.angle + a.vha);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(253,224,71,.1)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(253,224,71,.28)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore();
+
+  // Shadow
+  ctx.save(); ctx.globalAlpha = .25;
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(a.x+2, a.y+14+bob, 12, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // Body
+  const bg = ctx.createRadialGradient(a.x-3, a.y-2+bob, 2, a.x, a.y+4+bob, 12);
+  bg.addColorStop(0, '#3b5a80'); bg.addColorStop(1, '#1a2e44');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.ellipse(a.x, a.y+5+bob, 10, 12, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#dc2626'; ctx.fillRect(a.x-7, a.y+3+bob, 14, 4);
+
+  // Head
+  const hx = a.x + Math.cos(a.angle)*6, hy = a.y + Math.sin(a.angle)*6 - 9 + bob;
+  ctx.fillStyle = '#f4c896';
+  ctx.beginPath(); ctx.arc(hx, hy, 8, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#d4a870'; ctx.lineWidth = 1; ctx.stroke();
+
+  const e1x = hx+Math.cos(a.angle+.5)*3.5, e1y = hy+Math.sin(a.angle+.5)*3.5;
+  const e2x = hx+Math.cos(a.angle-.5)*3.5, e2y = hy+Math.sin(a.angle-.5)*3.5;
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath(); ctx.arc(e1x,e1y,1.8,0,Math.PI*2); ctx.arc(e2x,e2y,1.8,0,Math.PI*2); ctx.fill();
+
+  ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#ef4444';
+  ctx.fillText('ADM', a.x, a.y - 20 + bob);
+  ctx.textAlign = 'left';
+}
+
+// ══════════════════════════════════════════════
+//  UTILITY
+// ══════════════════════════════════════════════
+function rr(c, x, y, w, h, r, op) {
+  if (!Array.isArray(r)) r = [r, r, r, r];
+  c.beginPath();
+  c.moveTo(x+r[0], y);
+  c.lineTo(x+w-r[1], y); c.arcTo(x+w, y, x+w, y+r[1], r[1]);
+  c.lineTo(x+w, y+h-r[2]); c.arcTo(x+w, y+h, x+w-r[2], y+h, r[2]);
+  c.lineTo(x+r[3], y+h); c.arcTo(x, y+h, x, y+h-r[3], r[3]);
+  c.lineTo(x, y+r[0]); c.arcTo(x, y, x+r[0], y, r[0]);
+  c.closePath();
+  if (op === 'fill') c.fill(); else c.stroke();
+}
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  computeSizes();
+  window.addEventListener('resize', () => {
+    computeSizes();
+    if (phase === 'playing') { buildWS(); buildAdms(); }
+  });
+  const b = localStorage.getItem('s21best');
+  if (b) document.getElementById('bestlbl').textContent = `Лучший результат: ${b} очков`;
+  requestAnimationFrame(ts => { lastT = ts; requestAnimationFrame(loop); });
+});
 </script>
 </body>
 </html>
