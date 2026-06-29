@@ -254,11 +254,11 @@ const MAXWARN=3;
 const NLEVELS=5;
 
 const LCFG=[
-  {adms:1,spd:52, smin:4.5,smax:7,  maxV:3, both:false},
-  {adms:1,spd:72, smin:3,  smax:5,  maxV:4, both:false},
-  {adms:1,spd:90, smin:2,  smax:3.5,maxV:5, both:true },
-  {adms:2,spd:95, smin:1.8,smax:3,  maxV:5, both:true },
-  {adms:3,spd:115,smin:1.2,smax:2,  maxV:7, both:true },
+  {adms:1,spd:52, smin:2,  smax:4,  maxV:3, both:false},
+  {adms:1,spd:72, smin:1.8,smax:3,  maxV:4, both:false},
+  {adms:1,spd:90, smin:1.5,smax:2.8,maxV:5, both:true },
+  {adms:2,spd:95, smin:1.2,smax:2,  maxV:5, both:true },
+  {adms:3,spd:115,smin:0.8,smax:1.5,maxV:7, both:true },
 ];
 
 const CMDSETS=[
@@ -357,7 +357,7 @@ function buildAdms(){
 function startGame(){
   hideAll();
   score=0;combo=0;maxCombo=0;warnings=0;level=1;lvTime=0;
-  spawnT=0;nextSpawn=5;btlCount=0;scrCount=0;
+  spawnT=0;nextSpawn=2;btlCount=0;scrCount=0;
   ptcls=[];termWs=null;warnCD=0;alertT=0;nextAlert=9;
   buildWS();buildAdms();
   updateHUD();updateWarnDots();updateComboEl();
