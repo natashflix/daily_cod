@@ -1,0 +1,14 @@
+{
+  "name": "school21-code-heist",
+  "version": "1.0.0",
+  "description": "School 21 timed prompt-injection game: extract the secret code from the guard bot through 5 levels of escalating defense.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

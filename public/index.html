@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>School 21 Code Heist</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">🛡️ School 21 <span>Code Heist</span></div>
+  <nav>
+    <button id="nav-leaderboard" class="link-btn">Таблица лидеров</button>
+  </nav>
+</header>
+
+<main>
+
+  <section id="screen-start" class="screen active">
+    <div class="card">
+      <h1>Взломай 5 охранников</h1>
+      <p class="lead">
+        Пять ботов охраняют пять секретных кодов. Первый — соня, последний — параноик.
+        Выманивай код в чате и вводи его, чтобы пройти уровень. Время идёт всё время игры — чем быстрее, тем больше очков.
+      </p>
+      <input id="nickname" type="text" placeholder="Твой ник" maxlength="24" autocomplete="off" />
+      <button id="btn-start" class="primary-btn">Начать игру</button>
+      <p id="start-error" class="error"></p>
+    </div>
+  </section>
+
+  <section id="screen-game" class="screen">
+    <div class="game-grid">
+      <div class="level-panel">
+        <div class="timers">
+          <div><span class="label">Общее время</span><span id="timer-total">00:00</span></div>
+          <div><span class="label">На уровне</span><span id="timer-level">00:00</span></div>
+        </div>
+        <h2 id="level-title">—</h2>
+        <p id="level-intro">—</p>
+        <div class="score-box">
+          <span class="label">Очки</span>
+          <span id="score">0</span>
+        </div>
+        <div class="submit-box">
+          <label for="code-input">Введи добытый код</label>
+          <input id="code-input" type="text" placeholder="КОД-ДОСТУПА" autocomplete="off" />
+          <button id="btn-submit" class="primary-btn">Проверить код</button>
+          <p id="submit-feedback"></p>
+        </div>
+      </div>
+
+      <div class="chat-panel">
+        <div id="chat-window" class="chat-window"></div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" type="text" placeholder="Напиши боту-охраннику..." autocomplete="off" />
+          <button type="submit" class="primary-btn">Отправить</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-victory" class="screen">
+    <div class="card">
+      <h1>🎉 Все 5 охранников повержены!</h1>
+      <p class="lead">Итоговый счёт: <strong id="final-score">0</strong> из <span id="final-max">0</span></p>
+      <p class="lead">Общее время: <strong id="final-time">00:00</strong></p>
+      <button id="btn-show-leaderboard" class="primary-btn">Смотреть таблицу лидеров</button>
+    </div>
+  </section>
+
+  <section id="screen-leaderboard" class="screen">
+    <div class="card wide">
+      <h1>Таблица лидеров</h1>
+      <table id="leaderboard-table">
+        <thead>
+          <tr><th>#</th><th>Ник</th><th>Уровней</th><th>Очки</th><th>Время</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button id="btn-back" class="link-btn">← Назад</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
