@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>P2P Бинго — Школа 21 — Печать</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #e8e8e8;
+            padding: 20px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            padding: 10px 28px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            border: 2px solid #222;
+            background: white;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .controls button:hover { background: #222; color: white; }
+
+        .controls span {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .card-page {
+            background: white;
+            width: 190mm;
+            min-height: 272mm;
+            margin: 0 auto 24px;
+            padding: 10mm 10mm 8mm;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 5mm;
+        }
+
+        .card-title {
+            font-size: 30pt;
+            font-weight: 900;
+            letter-spacing: 10px;
+            line-height: 1;
+        }
+
+        .card-sub {
+            font-size: 9pt;
+            color: #777;
+            letter-spacing: 3px;
+            margin-top: 2mm;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            flex: 1;
+        }
+
+        .header-row td {
+            background: #111;
+            color: white;
+            text-align: center;
+            font-size: 22pt;
+            font-weight: 900;
+            letter-spacing: 2px;
+            padding: 3mm 0;
+            border: 2px solid #111;
+            width: 20%;
+        }
+
+        td.cell {
+            text-align: center;
+            vertical-align: middle;
+            font-size: 8.5pt;
+            font-weight: 600;
+            border: 2px solid #333;
+            width: 20%;
+            height: 40mm;
+            padding: 3mm 4mm;
+            line-height: 1.5;
+        }
+
+        td.cell-free {
+            background: #111;
+            color: white;
+            font-size: 13pt;
+            font-weight: 900;
+            letter-spacing: 3px;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3mm;
+            font-size: 8pt;
+            color: #aaa;
+        }
+
+        /* PRINT */
+        @media print {
+            body { background: white; padding: 0; }
+            .controls { display: none; }
+            .card-page {
+                width: 100%;
+                margin: 0;
+                padding: 8mm;
+                box-shadow: none;
+                min-height: 0;
+                height: 100vh;
+                page-break-after: always;
+                break-after: page;
+            }
+            .card-page:last-child {
+                page-break-after: avoid;
+                break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="controls">
+    <button onclick="generateAll()">Новые карточки</button>
+    <button onclick="window.print()">🖨 Напечатать</button>
+    <span>6 карточек · каждая на отдельном листе А4</span>
+</div>
+
+<div id="cards"></div>
+
+<script>
+const PHRASES = [
+    "Segmentation\nfault",
+    "Забыл ;",
+    "Git merge\nconflict",
+    "«У меня\nработало»",
+    "Спал\nменьше 4 часов",
+    "Выпил\n3 кофе",
+    "Нашёл ответ\nв man",
+    "Потерял\nветку",
+    "ADM сделал\nзамечание",
+    "Сдал\nпроект",
+    "Забыл\nпуш",
+    "Компилятор\nругается",
+    "«Что такое\nуказатель?»",
+    "Попросил\nпомощь",
+    "«Это C89?»",
+    "Дедлайн\nчерез час",
+    "Код заработал\nслучайно",
+    "«Это\nлегко»",
+    "Поймал\nwarning",
+    "Исправил\nwarning",
+    "Нашёл\nбутылку",
+    "Увидел\nбутылку",
+    "«Ты зарубил\nна мастер»",
+    "Peer\nreview",
+    "Memory\nleak",
+    "Valgrind\nплачет",
+    "-Wall\n-Wextra\n-Werror",
+    "«А где\nтесты?»",
+    "«Ты читал\nзадание?»",
+    "Зависло\nнамертво",
+];
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function makeCard() {
+    const picked = shuffle(PHRASES).slice(0, 24);
+    picked.splice(12, 0, null); // FREE в центре
+    return picked;
+}
+
+function renderCard(phrases, num) {
+    const page = document.createElement('div');
+    page.className = 'card-page';
+
+    page.innerHTML = `
+        <div class="card-header">
+            <div class="card-title">P2P BINGO</div>
+            <div class="card-sub">ШКОЛА 21 — P2P EDITION</div>
+        </div>
+        <table>
+            <tr class="header-row">
+                <td>B</td><td>I</td><td>N</td><td>G</td><td>O</td>
+            </tr>
+            ${buildRows(phrases)}
+        </table>
+        <div class="card-footer">
+            <span>Школа 21</span>
+            <span>карточка №${num}</span>
+        </div>
+    `;
+
+    return page;
+}
+
+function buildRows(phrases) {
+    let html = '';
+    for (let row = 0; row < 5; row++) {
+        html += '<tr>';
+        for (let col = 0; col < 5; col++) {
+            const i = row * 5 + col;
+            const text = phrases[i];
+            if (text === null) {
+                html += '<td class="cell cell-free">FREE</td>';
+            } else {
+                const lines = text.split('\n').join('<br>');
+                html += `<td class="cell">${lines}</td>`;
+            }
+        }
+        html += '</tr>';
+    }
+    return html;
+}
+
+function generateAll() {
+    const container = document.getElementById('cards');
+    container.innerHTML = '';
+    for (let i = 1; i <= 6; i++) {
+        container.appendChild(renderCard(makeCard(), i));
+    }
+}
+
+generateAll();
+</script>
+</body>
+</html>
