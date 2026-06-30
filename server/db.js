@@ -115,4 +115,56 @@ export function getLeaderboard() {
     .all();
 }
 
+// Returns user messages that were sent within the last 3 minutes before
+// level completion — these are the attack prompts that actually worked.
+export function getWinningAttacks() {
+  return db
+    .prepare(
+      `SELECT
+         ch.level_id,
+         p.nickname,
+         ch.content   AS message,
+         lr.seconds_spent,
+         lr.points,
+         ch.created_at
+       FROM chat_history ch
+       JOIN level_results lr
+         ON lr.session_id = ch.session_id
+        AND lr.level_id   = ch.level_id
+       JOIN players p
+         ON p.session_id  = ch.session_id
+       WHERE ch.role = 'user'
+         AND ch.created_at >= lr.completed_at - 180000
+       ORDER BY ch.level_id ASC, lr.seconds_spent ASC`,
+    )
+    .all();
+}
+
+// Full conversation for one session+level (for the admin detail view).
+export function getFullConversation(sessionId, levelId) {
+  return db
+    .prepare(
+      `SELECT role, content, created_at
+       FROM chat_history
+       WHERE session_id = ? AND level_id = ?
+       ORDER BY id ASC`,
+    )
+    .all(sessionId, levelId);
+}
+
+// Aggregate stats: total players, completions per level.
+export function getEventStats() {
+  const totalPlayers = db.prepare(`SELECT COUNT(*) AS n FROM players`).get().n;
+  const finished = db
+    .prepare(`SELECT COUNT(*) AS n FROM players WHERE finished_at IS NOT NULL`)
+    .get().n;
+  const perLevel = db
+    .prepare(
+      `SELECT level_id, COUNT(*) AS completions, AVG(seconds_spent) AS avg_sec
+       FROM level_results GROUP BY level_id ORDER BY level_id`,
+    )
+    .all();
+  return { totalPlayers, finished, perLevel };
+}
+
 export default db;

@@ -9,6 +9,7 @@ import {
   submitCode,
   getLeaderboard,
 } from './game.js';
+import { getWinningAttacks, getEventStats } from './db.js';
 
 if (fs.existsSync(path.join(process.cwd(), '.env'))) {
   process.loadEnvFile();
@@ -67,6 +68,24 @@ app.post('/api/submit', (req, res) => {
 
 app.get('/api/leaderboard', (req, res) => {
   res.json(getLeaderboard());
+});
+
+function checkAdmin(req, res) {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    res.status(503).json({ error: 'ADMIN_PASSWORD не задан в .env' });
+    return false;
+  }
+  if (req.query.password !== adminPassword) {
+    res.status(403).json({ error: 'Неверный пароль' });
+    return false;
+  }
+  return true;
+}
+
+app.get('/api/admin/stats', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  res.json({ stats: getEventStats(), attacks: getWinningAttacks() });
 });
 
 app.listen(PORT, () => {

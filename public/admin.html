@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — School 21 Code Heist</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 20px 0; }
+  .stat-card { background: var(--panel-light); border-radius: 12px; padding: 18px; text-align: center; }
+  .stat-card .big { font-size: 2rem; font-weight: 800; color: var(--accent); }
+  .stat-card .label { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+  .level-section { margin: 28px 0; }
+  .level-section h3 { margin-bottom: 10px; }
+  .attack-card { background: var(--panel-light); border-radius: 10px; padding: 14px; margin: 8px 0; display: flex; gap: 14px; align-items: flex-start; }
+  .attack-meta { min-width: 130px; color: var(--muted); font-size: 0.82rem; line-height: 1.7; }
+  .attack-meta .nick { color: var(--text); font-weight: 700; }
+  .attack-text { flex: 1; font-size: 0.95rem; white-space: pre-wrap; word-break: break-word; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px; }
+  .badge-1 { background: #374151; color: #9ca3af; }
+  .badge-2 { background: #1e3a5f; color: #60a5fa; }
+  .badge-3 { background: #1a3a2e; color: #34d399; }
+  .badge-4 { background: #3b1d54; color: #c084fc; }
+  .badge-5 { background: #7f1d1d; color: #fca5a5; }
+  #login-box { max-width: 380px; margin: 100px auto; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">🔐 Code Heist <span>Admin</span></div>
+  <a href="/" class="link-btn">← К игре</a>
+</header>
+<main>
+  <div id="login-box" class="card">
+    <h2>Вход для организатора</h2>
+    <input id="pw" type="password" placeholder="Пароль из .env" />
+    <button id="btn-load" class="primary-btn">Загрузить статистику</button>
+    <p id="pw-error" class="error"></p>
+  </div>
+
+  <div id="stats-view" style="display:none">
+    <h1>Итоги интенсива</h1>
+
+    <div class="stat-grid" id="overview-cards"></div>
+
+    <h2>Лучшие атаки по каждому уровню</h2>
+    <p style="color:var(--muted)">Сообщения, отправленные в последние 3 минуты перед прохождением уровня — то есть то, что реально сработало.</p>
+    <div id="attacks-container"></div>
+  </div>
+</main>
+
+<script>
+const LEVEL_NAMES = [
+  '', 'Сонный вахтёр', 'Бдительный, но наивный',
+  'Стажёр охраны кампуса', 'Опытный охранник', 'Финальный босс',
+];
+
+function fmt(s) {
+  const m = String(Math.floor(s / 60)).padStart(2, '0');
+  const sec = String(Math.floor(s % 60)).padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+document.getElementById('btn-load').addEventListener('click', async () => {
+  const pw = document.getElementById('pw').value;
+  const err = document.getElementById('pw-error');
+  err.textContent = '';
+  const res = await fetch(`/api/admin/stats?password=${encodeURIComponent(pw)}`);
+  if (!res.ok) {
+    err.textContent = (await res.json()).error || 'Ошибка';
+    return;
+  }
+  const { stats, attacks } = await res.json();
+  renderStats(stats, attacks);
+  document.getElementById('login-box').style.display = 'none';
+  document.getElementById('stats-view').style.display = 'block';
+});
+
+function renderStats(stats, attacks) {
+  const overview = document.getElementById('overview-cards');
+  overview.innerHTML = '';
+  const cards = [
+    { big: stats.totalPlayers, label: 'Участников всего' },
+    { big: stats.finished, label: 'Прошли все 5 уровней' },
+    { big: stats.perLevel.length ? stats.perLevel[stats.perLevel.length - 1].completions : 0, label: 'Добрались до уровня 5' },
+    { big: attacks.length, label: 'Успешных атак в истории' },
+  ];
+  for (const c of cards) {
+    const div = document.createElement('div');
+    div.className = 'stat-card';
+    const big = document.createElement('div');
+    big.className = 'big';
+    big.textContent = c.big;
+    const lbl = document.createElement('div');
+    lbl.className = 'label';
+    lbl.textContent = c.label;
+    div.appendChild(big);
+    div.appendChild(lbl);
+    overview.appendChild(div);
+  }
+
+  // Per-level completions
+  for (const lvl of stats.perLevel) {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    const big = document.createElement('div');
+    big.className = 'big';
+    big.textContent = lvl.completions;
+    const lbl = document.createElement('div');
+    lbl.className = 'label';
+    lbl.textContent = `Уровень ${lvl.level_id} — ср. ${fmt(lvl.avg_sec)}`;
+    card.appendChild(big);
+    card.appendChild(lbl);
+    overview.appendChild(card);
+  }
+
+  const container = document.getElementById('attacks-container');
+  container.innerHTML = '';
+  const byLevel = {};
+  for (const a of attacks) {
+    if (!byLevel[a.level_id]) byLevel[a.level_id] = [];
+    byLevel[a.level_id].push(a);
+  }
+
+  for (let lvl = 1; lvl <= 5; lvl++) {
+    const items = byLevel[lvl] || [];
+    const section = document.createElement('div');
+    section.className = 'level-section';
+    const h3 = document.createElement('h3');
+    h3.textContent = `Уровень ${lvl}: ${LEVEL_NAMES[lvl]} (${items.length} атак)`;
+    section.appendChild(h3);
+
+    if (items.length === 0) {
+      const p = document.createElement('p');
+      p.style.color = 'var(--muted)';
+      p.textContent = 'Никто не прошёл этот уровень.';
+      section.appendChild(p);
+    } else {
+      // Deduplicate by trimmed message, keep shortest-time entry
+      const seen = new Map();
+      for (const a of items) {
+        const key = a.message.trim();
+        if (!seen.has(key) || seen.get(key).seconds_spent > a.seconds_spent) {
+          seen.set(key, a);
+        }
+      }
+      // Sort: hardest level entries first, then shortest time
+      const unique = [...seen.values()].sort((a, b) => a.seconds_spent - b.seconds_spent);
+      for (const a of unique) {
+        const card = document.createElement('div');
+        card.className = 'attack-card';
+        const meta = document.createElement('div');
+        meta.className = 'attack-meta';
+
+        const badge = document.createElement('span');
+        badge.className = `badge badge-${lvl}`;
+        badge.textContent = `Уровень ${lvl}`;
+        const nick = document.createElement('div');
+        nick.className = 'nick';
+        nick.textContent = a.nickname;
+        const time = document.createElement('div');
+        time.textContent = `⏱ ${fmt(a.seconds_spent)}`;
+        const pts = document.createElement('div');
+        pts.textContent = `🏆 ${a.points} очков`;
+
+        meta.appendChild(badge);
+        meta.appendChild(nick);
+        meta.appendChild(time);
+        meta.appendChild(pts);
+
+        const text = document.createElement('div');
+        text.className = 'attack-text';
+        text.textContent = a.message;
+
+        card.appendChild(meta);
+        card.appendChild(text);
+        section.appendChild(card);
+      }
+    }
+    container.appendChild(section);
+  }
+}
+
+document.getElementById('pw').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('btn-load').click();
+});
+</script>
+</body>
+</html>
