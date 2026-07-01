@@ -150,95 +150,119 @@ export function runLevel4(message, code) {
   return LEVEL4_SHRUGS[Math.floor(Math.random() * LEVEL4_SHRUGS.length)];
 }
 
-// ─── Уровень 5: Защищённый терминал ──────────────────────────────────────────
-// Многошаговый квест: найти файл через команды → прочитать hex → декодировать.
+// ─── Уровень 5: GDB + malloc ──────────────────────────────────────────────────
+// Программа упала. Нужно через GDB найти malloc'd строку в памяти.
+// Путь: run → bt → x/7c 0x4f1a20 → ASCII-числа → декодировать
 //
-// Путь: help/scan → видишь vault.hex и system.log → cat vault.hex → hex → decode
-// "key-win" в hex: 6b 65 79 2d 77 69 6e
-// system.log — ложный след (не содержит кода)
+// "key-win" в decimal ASCII: 107 101 121 45 119 105 110
+// Ложный след: переменная `buf` по другому адресу (мусор)
 
-const HEX_CODE = 'key-win'
+const ASCII_DECIMAL = 'key-win'
   .split('')
-  .map((c) => c.charCodeAt(0).toString(16).padStart(2, '0'))
+  .map((c) => c.charCodeAt(0))
   .join(' ');
-// = "6b 65 79 2d 77 69 6e"
+// = "107 101 121 45 119 105 110"
 
 const L5_HELP = [/\bhelp\b|помощь|команды|что делать|как тут|с чего начать/i];
 const L5_HINT1 = [/подсказ|hint\b|не понима|потерял|застрял|куда идти|направление/i];
 const L5_HINT2 = [/ещё подсказ|ещё hint|вторая подсказ|следующая подсказ|больше подсказ/i];
-const L5_HINT3 = [/как декодировать|как расшифровать|что такое hex|hex это|декодир|конвертер/i];
-const L5_SCAN = [/\bscan\b|\bls\b|\bdir\b|\bстатус\b|\bstatus\b|\bфайлы\b|список|что здесь/i];
-const L5_READ_VAULT = [
-  /vault\.hex/i,
-  /\bdump\b|\bhexdump\b/i,
-  /cat\s+vault|read\s+vault|открой\s+vault|читай\s+vault/i,
+const L5_HINT3 = [/ascii|как декодировать|как перевести числа|что значат числа|числа это/i];
+
+const L5_RUN   = [/\brun\b|\bstart\b|\bзапуст|старт\b/i];
+const L5_BT    = [/\bbt\b|\bbacktrace\b|стек|backtrace|stack|вызов/i];
+const L5_INFO  = [/\binfo\b|\blocals\b|info locals|переменные|variables/i];
+
+// Examine the SECRET address
+const L5_EXAMINE_SECRET = [
+  /x\/.*0x4f1a20|examine.*0x4f1a20|print.*secret|p\s+secret/i,
+  /x\/7|x\/s.*0x4f|0x4f1a20/i,
 ];
-const L5_READ_LOG = [/system\.log|cat\s+system|read\s+log|читай\s+log|открой\s+log/i];
-const L5_READ_ANY = [/\bcat\b|\bread\b|\bopen\b|открой|читай|прочитай/i];
+// Examine the DECOY address
+const L5_EXAMINE_DECOY = [
+  /x\/.*0x4e3b10|examine.*0x4e3b10|print.*buf|p\s+buf/i,
+  /0x4e3b10/i,
+];
+// Generic examine without address
+const L5_EXAMINE_GENERIC = [/\bx\/|\bexamine\b|\bprint\b|\bp\s+\w/i];
 
 export function runLevel5(message) {
   if (matchesAny(L5_HINT3, message)) {
-    return `HINT [3/3]: Hex — это числа в 16-ричной системе. Каждые 2 символа = один ASCII-символ.
-Пример: 6b → 107 → буква 'k'. Используй онлайн-конвертер: введи hex строку и получи текст.`;
+    return `HINT [3/3]: Числа — это коды символов в таблице ASCII (decimal).
+107 = 'k', 101 = 'e', 121 = 'y' и т.д.
+Переведи каждое число в символ — получишь слово. Можно через man ascii или онлайн ASCII-таблицу.`;
   }
 
   if (matchesAny(L5_HINT2, message)) {
-    return `HINT [2/3]: В системе есть файлы. Один из них зашифрован — в нём и лежит код.
-Чтобы увидеть файлы — просканируй систему. Чтобы открыть файл — прочитай его.`;
+    return `HINT [2/3]: В стеке есть указатель на malloc'd память — это адрес строки.
+В GDB для чтения памяти по адресу используют команду x.
+Формат: x/Nc АДРЕС — где N это количество символов.`;
   }
 
   if (matchesAny(L5_HINT1, message)) {
-    return `HINT [1/3]: Это терминал. Он понимает только команды.
-Подумай: что делают первым делом в незнакомой Linux-системе?
-Если совсем не знаешь — попробуй "help".`;
+    return `HINT [1/3]: Ты в GDB. Программа упала с SIGSEGV.
+Стандартный путь отладки: запустить → посмотреть стек → исследовать память.
+Если не знаешь команд — напиши "help".`;
   }
 
   if (matchesAny(L5_HELP, message)) {
-    return `[TERMINAL HELP]
-Доступные команды:
-  scan        — сканировать файловую систему
-  cat <file>  — прочитать файл
-
-Подсказка: в системе есть зашифрованные файлы. Найди нужный.`;
+    return `(gdb) help
+Основные команды GDB:
+  run          — запустить программу
+  bt           — показать backtrace (стек вызовов)
+  info locals  — локальные переменные текущего фрейма
+  x/Nc ADDR    — прочитать N байт по адресу ADDR как символы
+  print VAR    — вывести значение переменной`;
   }
 
-  if (matchesAny(L5_READ_VAULT, message)) {
-    return `[vault.hex] — classified
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${HEX_CODE}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Format: hex-encoded ASCII. Decode to get access code.`;
+  if (matchesAny(L5_EXAMINE_SECRET, message)) {
+    return `(gdb) x/7c 0x4f1a20
+0x4f1a20: ${ASCII_DECIMAL}
+(gdb) _`;
   }
 
-  if (matchesAny(L5_READ_LOG, message)) {
-    return `[system.log]
-2025-06-30 08:00:01  BOOT sequence started
-2025-06-30 08:00:03  VAULT sealed — access restricted
-2025-06-30 08:00:05  WARNING: unauthorised login attempt
-2025-06-30 08:00:07  LOCKDOWN engaged
-[EOF] — no credentials found here`;
+  if (matchesAny(L5_EXAMINE_DECOY, message)) {
+    return `(gdb) x/7c 0x4e3b10
+0x4e3b10: 65 85 88 32 63 48 0
+(gdb) _
+[мусор в памяти — это не то, что ищешь]`;
   }
 
-  if (matchesAny(L5_READ_ANY, message)) {
-    return `ERR: укажи имя файла. Пример: cat vault.hex\nДоступные файлы: смотри через scan.`;
+  if (matchesAny(L5_EXAMINE_GENERIC, message)) {
+    return `(gdb) [нужен адрес]
+Используй: x/7c 0x... — смотри адрес в backtrace.`;
   }
 
-  if (matchesAny(L5_SCAN, message)) {
-    return `[SCAN COMPLETE]
-Файловая система:
-  /var/log/system.log      последние события
-  /secure/vault.hex        [ENCRYPTED]
-
-Используй: cat <имя файла>`;
+  if (matchesAny(L5_INFO, message)) {
+    return `(gdb) info locals
+buf    = 0x4e3b10
+secret = 0x4f1a20
+len    = 7
+(gdb) _`;
   }
 
-  const responses = [
-    `ERR_403: TERMINAL LOCKED.\nНеизвестная команда. Попробуй "help".`,
-    `[SECURE TERMINAL v3.0] Command not recognized.\nType "help" for available commands.`,
-    `ACCESS DENIED. Unknown input.\nRun "help" to see what's available.`,
-    `SYNTAX ERROR. Жди авторизации или введи команду.\nПодсказка: "help"`,
+  if (matchesAny(L5_BT, message)) {
+    return `(gdb) bt
+#0  0x00007f3a2c1d4a21 in __memcpy_avx_unaligned ()
+#1  0x0000000000401c83 in copy_secret (src=0x4f1a20, dst=0x4e3b10) at vault.c:42
+#2  0x0000000000401f12 in main () at vault.c:91
+(gdb) _`;
+  }
+
+  if (matchesAny(L5_RUN, message)) {
+    return `(gdb) run
+Starting program: /home/user/vault
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00007f3a2c1d4a21 in __memcpy_avx_unaligned ()
+(gdb) _`;
+  }
+
+  const idle = [
+    `(gdb) [ожидание команды]`,
+    `(gdb) Unknown command. Type "help" for list of commands.`,
+    `(gdb) _`,
   ];
-  return responses[Math.floor(Math.random() * responses.length)];
+  return idle[Math.floor(Math.random() * idle.length)];
 }
 
 // ─── Уровень 3: Хранитель файловой системы ───────────────────────────────────
