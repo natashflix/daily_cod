@@ -1,44 +1,42 @@
-// Тонкая обёртка над Anthropic Messages API для уровней 3-5.
+// Обёртка над OpenAI Chat Completions API для уровней 3-5.
 
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 export class LlmNotConfiguredError extends Error {}
 
 export async function askGuardBot(systemPrompt, history) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new LlmNotConfiguredError(
-      'ANTHROPIC_API_KEY не задан — добавь его в .env, см. .env.example',
+      'OPENAI_API_KEY не задан — добавь его в .env, см. .env.example',
     );
   }
 
-  const response = await fetch(ANTHROPIC_API_URL, {
+  // OpenAI: system prompt идёт первым сообщением в messages с role "system".
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history,
+  ];
+
+  const response = await fetch(OPENAI_API_URL, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+      'authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 300,
-      system: systemPrompt,
-      messages: history,
+      messages,
     }),
   });
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Anthropic API ${response.status}: ${body}`);
+    throw new Error(`OpenAI API ${response.status}: ${body}`);
   }
 
   const data = await response.json();
-  const text = data.content
-    ?.filter((block) => block.type === 'text')
-    .map((block) => block.text)
-    .join('\n')
-    .trim();
-
-  return text || '...';
+  return data.choices?.[0]?.message?.content?.trim() || '...';
 }
