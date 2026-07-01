@@ -2,3 +2,9 @@ node_modules/
 .env
 *.db
 *.db-journal
+
+# C build artifacts
+build/
+*.o
+*.a
+*.so
