@@ -140,17 +140,40 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   }
   input.value = '';
   if (data.gameComplete) {
-    clearInterval(tickHandle);
-    const finalRes = await fetch(`/api/state?sessionId=${encodeURIComponent(sessionId)}`);
-    const finalState = await finalRes.json();
-    document.getElementById('final-score').textContent = finalState.score;
-    document.getElementById('final-max').textContent = finalState.maxScore;
-    document.getElementById('final-time').textContent = fmt(finalState.elapsedSeconds);
-    showScreen('victory');
+    await showVictory();
     return;
   }
   feedback.textContent = `Верно! +${data.pointsEarned} очков. Следующий уровень открыт.`;
   feedback.className = 'ok';
+  await refreshState();
+});
+
+async function showVictory() {
+  clearInterval(tickHandle);
+  const finalRes = await fetch(`/api/state?sessionId=${encodeURIComponent(sessionId)}`);
+  const finalState = await finalRes.json();
+  document.getElementById('final-score').textContent = finalState.score;
+  document.getElementById('final-max').textContent = finalState.maxScore;
+  document.getElementById('final-time').textContent = fmt(finalState.elapsedSeconds);
+  showScreen('victory');
+}
+
+document.getElementById('btn-surrender').addEventListener('click', async () => {
+  if (!confirm('Сдаться и перейти на следующий уровень? Очки за этот уровень не начислятся, решение не покажем.')) {
+    return;
+  }
+  const res = await fetch('/api/surrender', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ sessionId }),
+  });
+  const data = await res.json();
+  document.getElementById('code-input').value = '';
+  document.getElementById('submit-feedback').textContent = '';
+  if (data.gameComplete) {
+    await showVictory();
+    return;
+  }
   await refreshState();
 });
 

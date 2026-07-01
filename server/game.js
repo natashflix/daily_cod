@@ -108,6 +108,35 @@ export function submitCode(sessionId, submittedCode) {
   };
 }
 
+// Сдаться: переводит на следующий уровень без начисления очков и без
+// показа решения. Сдавшийся уровень не записывается в level_results,
+// поэтому не считается пройденным. На последнем уровне — финиш игры.
+export function surrenderLevel(sessionId) {
+  const player = db.getPlayer(sessionId);
+  if (!player) throw new Error('Сессия не найдена. Начни игру заново.');
+  if (player.current_level > TOTAL_LEVELS) {
+    return { surrendered: true, gameComplete: true, nextLevel: null };
+  }
+
+  const level = getLevel(player.current_level);
+  const nextLevelId = level.id + 1;
+  const gameComplete = nextLevelId > TOTAL_LEVELS;
+
+  db.setPlayerLevel(sessionId, nextLevelId, Date.now());
+  if (gameComplete) {
+    db.finishPlayer(sessionId);
+  }
+
+  const next = gameComplete ? null : getLevel(nextLevelId);
+  return {
+    surrendered: true,
+    gameComplete,
+    nextLevel: next
+      ? { id: next.id, title: next.title, intro: next.intro, basePoints: next.basePoints }
+      : null,
+  };
+}
+
 export function getLeaderboard() {
   return db.getLeaderboard().map((row) => ({
     nickname: row.nickname,

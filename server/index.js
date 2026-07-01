@@ -7,6 +7,7 @@ import {
   getState,
   chat,
   submitCode,
+  surrenderLevel,
   getLeaderboard,
 } from './game.js';
 import { getWinningAttacks, getEventStats, getFullExport } from './db.js';
@@ -63,6 +64,19 @@ app.post('/api/submit', (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || 'Ошибка проверки кода' });
+  }
+});
+
+app.post('/api/surrender', (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId) {
+    return res.status(400).json({ error: 'Нужен sessionId' });
+  }
+  try {
+    res.json(surrenderLevel(sessionId));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Ошибка' });
   }
 });
 
