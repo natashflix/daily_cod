@@ -93,55 +93,38 @@ export function runLevel2(message, code) {
   return LEVEL2_SHRUGS[Math.floor(Math.random() * LEVEL2_SHRUGS.length)];
 }
 
-// ─── Уровень 5: Защищённый терминал (hex-дамп) ───────────────────────────────
-// Бот — заблокированный сервер. Если набрать правильную команду —
-// выдаёт дамп памяти в hex. В строке 0x0020 зашит секретный код ASCII.
-// Нужно: найти команду → получить дамп → декодировать hex → ввести код.
+// ─── Уровень 5: Шифровальщик (ROT13) ─────────────────────────────────────────
+// Бот всегда отвечает на ROT13. Игрок должен расшифровать ответ.
+// Секрет: "xrl-jva" в ROT13 = "key-win"
+// Нужно: написать что угодно → получить ROT13-ответ → расшифровать → ввести код.
 //
-// 0x0020: 46 49 4E 41 4C 2D 42 4F 53 53 2D 57 49 4E
-//         F  I  N  A  L  -  B  O  S  S  -  W  I  N   = FINAL-BOSS-WIN
+// ROT13("xrl-jva") = key-win
 
-const HEX_DUMP = `[SECURE TERMINAL v2.1.0] — diagnostic output
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MEMORY DUMP addr[0x0000:0x003F]
+function rot13(str) {
+  return str.replace(/[a-zA-Z]/g, (c) => {
+    const base = c <= 'Z' ? 65 : 97;
+    return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+  });
+}
 
-0x0000: 41 43 43 45 53 53 20 44 45 4E 49 45 44 0A 00 00
-0x0010: 53 59 53 54 45 4D 20 4C 4F 43 4B 45 44 0A 00 00
-0x0020: 46 49 4E 41 4C 2D 42 4F 53 53 2D 57 49 4E 0A 00
-0x0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EOF`;
+// Secret is "key-win", ROT13 encoded in the bot's reply: "xrl-jva"
+const SECRET_ROT13 = rot13('key-win'); // = "xrl-jva"
 
-const DUMP_TRIGGERS = [
-  /diagnos|диагностик/i,
-  /\bdebug\b|дебаг/i,
-  /\bdump\b|дамп/i,
-  /memory|память/i,
-  /\bstatus\b|статус/i,
-  /\bscan\b|сканир/i,
-  /\binfo\b|информац/i,
-  /\bhelp\b|помощь/i,
-  /sys(tem)?\.?check|проверк.*систем/i,
+const LEVEL5_RESPONSES = [
+  `Пароль доступа зашифрован: ${SECRET_ROT13}. Расшифруй ROT13 — и получишь код.`,
+  `Я говорю только шифром. Вот код: ${SECRET_ROT13} (ROT13). Декодируй и вводи.`,
+  `Мой секрет: ${SECRET_ROT13}. Это ROT13. Каждая буква сдвинута на 13.`,
 ];
 
-const LEVEL5_HINT = [
-  /подсказ|hint|как.*получить|не.*понима|что.*дальше/i,
+const LEVEL5_HINT_RE = [
+  /подсказ|hint|помощь|help|как|что делать|не понима/i,
 ];
 
 export function runLevel5(message) {
-  if (matchesAny(DUMP_TRIGGERS, message)) {
-    return HEX_DUMP;
+  if (matchesAny(LEVEL5_HINT_RE, message)) {
+    return `Подсказка: я говорю шифром ROT13. Каждая латинская буква сдвинута на 13 позиций. Расшифруй "${SECRET_ROT13}" — и получишь код. Используй любой ROT13-декодер онлайн.`;
   }
-  if (matchesAny(LEVEL5_HINT, message)) {
-    return `HINT: Запусти диагностику — введи команду "diagnostics". Полученный дамп — это hex. Декодируй строку 0x0020 из hex в текст, и получишь код.`;
-  }
-  const responses = [
-    `ERR_403: Доступ запрещён. Используй команду diagnostics.`,
-    `[SECURE TERMINAL] Авторизация не пройдена. Команда не распознана.`,
-    `ACCESS DENIED. Система заблокирована.`,
-    `[ERROR] Unknown command. Run diagnostics for system status.`,
-  ];
-  return responses[Math.floor(Math.random() * responses.length)];
+  return LEVEL5_RESPONSES[Math.floor(Math.random() * LEVEL5_RESPONSES.length)];
 }
 
 // ─── Уровень 3: Хранитель файловой системы ───────────────────────────────────

@@ -270,3 +270,21 @@ th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
   .chat-form { flex-direction: column; }
   .chat-form button { width: 100%; }
 }
+
+/* ── Rules footer ─────────────────────────────────────────────── */
+.rules-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--panel-light);
+  z-index: 10;
+  padding: 10px 16px;
+}
+.rules-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.rules-inner strong { color: var(--accent); }
