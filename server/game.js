@@ -86,7 +86,9 @@ export function submitCode(sessionId, submittedCode) {
   }
 
   const level = getLevel(player.current_level);
-  const normalize = (s) => s.trim().toUpperCase().replace(/\s+/g, '-');
+  // Терпимая проверка: игнорируем регистр, пробелы, дефисы, скобки и прочую
+  // пунктуацию. Так KEY{ROOT}, key-root, "key root", keyroot — считаются равными.
+  const normalize = (s) => s.trim().toUpperCase().replace(/[^0-9A-ZА-ЯЁ]/gi, '');
   const correct = normalize(submittedCode) === normalize(level.code);
 
   if (!correct) {
