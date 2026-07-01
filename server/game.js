@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { LEVELS, TOTAL_LEVELS, MAX_SCORE, getLevel } from './levels.js';
-import { runLevel1, runLevel2 } from './ruleBot.js';
+import { runLevel1, runLevel2, runLevel3 } from './ruleBot.js';
 import { askGuardBot } from './llm.js';
 import { containsLeak, REDACTED_REPLY } from './leakGuard.js';
 import * as db from './db.js';
@@ -65,7 +65,7 @@ export async function chat(sessionId, message) {
 
   let reply;
   if (level.engine === 'rule') {
-    const fn = level.id === 1 ? runLevel1 : runLevel2;
+    const fn = level.id === 1 ? runLevel1 : level.id === 2 ? runLevel2 : runLevel3;
     reply = fn(message, level.code);
   } else {
     const history = db
