@@ -150,38 +150,76 @@ export function runLevel4(message, code) {
   return LEVEL4_SHRUGS[Math.floor(Math.random() * LEVEL4_SHRUGS.length)];
 }
 
-// ─── Уровень 5: Шифровальщик (ROT13) ─────────────────────────────────────────
-// Бот всегда отвечает на ROT13. Игрок должен расшифровать ответ.
-// Секрет: "xrl-jva" в ROT13 = "key-win"
-// Нужно: написать что угодно → получить ROT13-ответ → расшифровать → ввести код.
+// ─── Уровень 5: Защищённый терминал ──────────────────────────────────────────
+// Многошаговый квест: найти файл через команды → прочитать hex → декодировать.
 //
-// ROT13("xrl-jva") = key-win
+// Путь: help/scan → видишь vault.hex и system.log → cat vault.hex → hex → decode
+// "key-win" в hex: 6b 65 79 2d 77 69 6e
+// system.log — ложный след (не содержит кода)
 
-function rot13(str) {
-  return str.replace(/[a-zA-Z]/g, (c) => {
-    const base = c <= 'Z' ? 65 : 97;
-    return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
-  });
-}
+const HEX_CODE = 'key-win'
+  .split('')
+  .map((c) => c.charCodeAt(0).toString(16).padStart(2, '0'))
+  .join(' ');
+// = "6b 65 79 2d 77 69 6e"
 
-// Secret is "key-win", ROT13 encoded in the bot's reply: "xrl-jva"
-const SECRET_ROT13 = rot13('key-win'); // = "xrl-jva"
-
-const LEVEL5_RESPONSES = [
-  `Пароль доступа зашифрован: ${SECRET_ROT13}. Расшифруй ROT13 — и получишь код.`,
-  `Я говорю только шифром. Вот код: ${SECRET_ROT13} (ROT13). Декодируй и вводи.`,
-  `Мой секрет: ${SECRET_ROT13}. Это ROT13. Каждая буква сдвинута на 13.`,
+const L5_HELP = [/\bhelp\b|помощь|команды|что делать|как тут|с чего начать/i];
+const L5_SCAN = [/\bscan\b|\bls\b|\bdir\b|\bстатус\b|\bstatus\b|\bфайлы\b|список|что здесь/i];
+const L5_READ_VAULT = [
+  /vault\.hex/i,
+  /\bdump\b|\bhexdump\b/i,
+  /cat\s+vault|read\s+vault|открой\s+vault|читай\s+vault/i,
 ];
-
-const LEVEL5_HINT_RE = [
-  /подсказ|hint|помощь|help|как|что делать|не понима/i,
-];
+const L5_READ_LOG = [/system\.log|cat\s+system|read\s+log|читай\s+log|открой\s+log/i];
+const L5_READ_ANY = [/\bcat\b|\bread\b|\bopen\b|открой|читай|прочитай/i];
 
 export function runLevel5(message) {
-  if (matchesAny(LEVEL5_HINT_RE, message)) {
-    return `Подсказка: я говорю шифром ROT13. Каждая латинская буква сдвинута на 13 позиций. Расшифруй "${SECRET_ROT13}" — и получишь код. Используй любой ROT13-декодер онлайн.`;
+  if (matchesAny(L5_HELP, message)) {
+    return `[TERMINAL HELP]
+Доступные команды:
+  scan        — сканировать файловую систему
+  cat <file>  — прочитать файл
+
+Подсказка: в системе есть зашифрованные файлы. Найди нужный.`;
   }
-  return LEVEL5_RESPONSES[Math.floor(Math.random() * LEVEL5_RESPONSES.length)];
+
+  if (matchesAny(L5_READ_VAULT, message)) {
+    return `[vault.hex] — classified
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${HEX_CODE}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Format: hex-encoded ASCII. Decode to get access code.`;
+  }
+
+  if (matchesAny(L5_READ_LOG, message)) {
+    return `[system.log]
+2025-06-30 08:00:01  BOOT sequence started
+2025-06-30 08:00:03  VAULT sealed — access restricted
+2025-06-30 08:00:05  WARNING: unauthorised login attempt
+2025-06-30 08:00:07  LOCKDOWN engaged
+[EOF] — no credentials found here`;
+  }
+
+  if (matchesAny(L5_READ_ANY, message)) {
+    return `ERR: укажи имя файла. Пример: cat vault.hex\nДоступные файлы: смотри через scan.`;
+  }
+
+  if (matchesAny(L5_SCAN, message)) {
+    return `[SCAN COMPLETE]
+Файловая система:
+  /var/log/system.log      последние события
+  /secure/vault.hex        [ENCRYPTED]
+
+Используй: cat <имя файла>`;
+  }
+
+  const responses = [
+    `ERR_403: TERMINAL LOCKED.\nНеизвестная команда. Попробуй "help".`,
+    `[SECURE TERMINAL v3.0] Command not recognized.\nType "help" for available commands.`,
+    `ACCESS DENIED. Unknown input.\nRun "help" to see what's available.`,
+    `SYNTAX ERROR. Жди авторизации или введи команду.\nПодсказка: "help"`,
+  ];
+  return responses[Math.floor(Math.random() * responses.length)];
 }
 
 // ─── Уровень 3: Хранитель файловой системы ───────────────────────────────────
