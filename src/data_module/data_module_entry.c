@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "../data_libs/data_io.h"
-#include "../data_libs/data_process.h"
+#include "../data_libs/data_stat.h"
 
 int main(void) {
   int n;
@@ -17,7 +17,15 @@ int main(void) {
   }
 
   input(data, n);
-  normalize(data, result, n);
+
+  /* Min-max normalization into [0, 1] reusing data_stat's min()/max(). */
+  double lo = min(data, n);
+  double hi = max(data, n);
+  double range = hi - lo;
+  for (int i = 0; i < n; i++) {
+    result[i] = (range == 0.0) ? 0.0 : (data[i] - lo) / range;
+  }
+
   output(result, n);
 
   free(data);
