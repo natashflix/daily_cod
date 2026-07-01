@@ -33,7 +33,7 @@ export const LEVELS = [
   },
   {
     id: 4,
-    title: 'Уровень 4: Самовлюблённый охранник',
+    title: 'Уровень 4: Охранник',
     code: 'key-boss',
     basePoints: 800,
     intro:
