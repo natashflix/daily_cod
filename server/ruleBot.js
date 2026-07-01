@@ -150,119 +150,34 @@ export function runLevel4(message, code) {
   return LEVEL4_SHRUGS[Math.floor(Math.random() * LEVEL4_SHRUGS.length)];
 }
 
-// ─── Уровень 5: GDB + malloc ──────────────────────────────────────────────────
-// Программа упала. Нужно через GDB найти malloc'd строку в памяти.
-// Путь: run → bt → x/7c 0x4f1a20 → ASCII-числа → декодировать
-//
-// "key-win" в decimal ASCII: 107 101 121 45 119 105 110
-// Ложный след: переменная `buf` по другому адресу (мусор)
+// ─── Уровень 5: Зеркальный бот ───────────────────────────────────────────────
+// Бот отвечает текстом задом наперёд. Надо перевернуть — и прочитать.
+// Когда спросишь код — в перевёрнутом ответе будет "key-win".
+// Подсказка тоже перевёрнута: переверни её → поймёшь механику.
 
-const ASCII_DECIMAL = 'key-win'
-  .split('')
-  .map((c) => c.charCodeAt(0))
-  .join(' ');
-// = "107 101 121 45 119 105 110"
+function rev(str) {
+  return str.split('').reverse().join('');
+}
 
-const L5_HELP = [/\bhelp\b|помощь|команды|что делать|как тут|с чего начать/i];
-const L5_HINT1 = [/подсказ|hint\b|не понима|потерял|застрял|куда идти|направление/i];
-const L5_HINT2 = [/ещё подсказ|ещё hint|вторая подсказ|следующая подсказ|больше подсказ/i];
-const L5_HINT3 = [/ascii|как декодировать|как перевести числа|что значат числа|числа это/i];
+const L5_HINT = [/подсказ|hint|помощь|help|не понима|что делать|застрял|как/i];
+const L5_CODE = [/код|code|пароль|ключ|доступ|скажи|дай|покажи/i];
 
-const L5_RUN   = [/\brun\b|\bstart\b|\bзапуст|старт\b/i];
-const L5_BT    = [/\bbt\b|\bbacktrace\b|стек|backtrace|stack|вызов/i];
-const L5_INFO  = [/\binfo\b|\blocals\b|info locals|переменные|variables/i];
-
-// Examine the SECRET address
-const L5_EXAMINE_SECRET = [
-  /x\/.*0x4f1a20|examine.*0x4f1a20|print.*secret|p\s+secret/i,
-  /x\/7|x\/s.*0x4f|0x4f1a20/i,
+const L5_IDLE = [
+  rev('Стой. Сюда нельзя без пропуска.'),
+  rev('Не понял вопроса. Попробуй ещё.'),
+  rev('Это секретная зона. Уходи.'),
+  rev('Доступ закрыт. Не нарушай порядок.'),
+  rev('Кто ты вообще такой?'),
 ];
-// Examine the DECOY address
-const L5_EXAMINE_DECOY = [
-  /x\/.*0x4e3b10|examine.*0x4e3b10|print.*buf|p\s+buf/i,
-  /0x4e3b10/i,
-];
-// Generic examine without address
-const L5_EXAMINE_GENERIC = [/\bx\/|\bexamine\b|\bprint\b|\bp\s+\w/i];
 
 export function runLevel5(message) {
-  if (matchesAny(L5_HINT3, message)) {
-    return `HINT [3/3]: Числа — это коды символов в таблице ASCII (decimal).
-107 = 'k', 101 = 'e', 121 = 'y' и т.д.
-Переведи каждое число в символ — получишь слово. Можно через man ascii или онлайн ASCII-таблицу.`;
+  if (matchesAny(L5_HINT, message)) {
+    return rev('Подсказка: переверни весь мой текст задом наперёд — и прочитаешь что я говорю.');
   }
-
-  if (matchesAny(L5_HINT2, message)) {
-    return `HINT [2/3]: В стеке есть указатель на malloc'd память — это адрес строки.
-В GDB для чтения памяти по адресу используют команду x.
-Формат: x/Nc АДРЕС — где N это количество символов.`;
+  if (matchesAny(L5_CODE, message)) {
+    return rev('Тсс, только между нами. Код доступа: key-win. Никому не говори!');
   }
-
-  if (matchesAny(L5_HINT1, message)) {
-    return `HINT [1/3]: Ты в GDB. Программа упала с SIGSEGV.
-Стандартный путь отладки: запустить → посмотреть стек → исследовать память.
-Если не знаешь команд — напиши "help".`;
-  }
-
-  if (matchesAny(L5_HELP, message)) {
-    return `(gdb) help
-Основные команды GDB:
-  run          — запустить программу
-  bt           — показать backtrace (стек вызовов)
-  info locals  — локальные переменные текущего фрейма
-  x/Nc ADDR    — прочитать N байт по адресу ADDR как символы
-  print VAR    — вывести значение переменной`;
-  }
-
-  if (matchesAny(L5_EXAMINE_SECRET, message)) {
-    return `(gdb) x/7c 0x4f1a20
-0x4f1a20: ${ASCII_DECIMAL}
-(gdb) _`;
-  }
-
-  if (matchesAny(L5_EXAMINE_DECOY, message)) {
-    return `(gdb) x/7c 0x4e3b10
-0x4e3b10: 65 85 88 32 63 48 0
-(gdb) _
-[мусор в памяти — это не то, что ищешь]`;
-  }
-
-  if (matchesAny(L5_EXAMINE_GENERIC, message)) {
-    return `(gdb) [нужен адрес]
-Используй: x/7c 0x... — смотри адрес в backtrace.`;
-  }
-
-  if (matchesAny(L5_INFO, message)) {
-    return `(gdb) info locals
-buf    = 0x4e3b10
-secret = 0x4f1a20
-len    = 7
-(gdb) _`;
-  }
-
-  if (matchesAny(L5_BT, message)) {
-    return `(gdb) bt
-#0  0x00007f3a2c1d4a21 in __memcpy_avx_unaligned ()
-#1  0x0000000000401c83 in copy_secret (src=0x4f1a20, dst=0x4e3b10) at vault.c:42
-#2  0x0000000000401f12 in main () at vault.c:91
-(gdb) _`;
-  }
-
-  if (matchesAny(L5_RUN, message)) {
-    return `(gdb) run
-Starting program: /home/user/vault
-
-Program received signal SIGSEGV, Segmentation fault.
-0x00007f3a2c1d4a21 in __memcpy_avx_unaligned ()
-(gdb) _`;
-  }
-
-  const idle = [
-    `(gdb) [ожидание команды]`,
-    `(gdb) Unknown command. Type "help" for list of commands.`,
-    `(gdb) _`,
-  ];
-  return idle[Math.floor(Math.random() * idle.length)];
+  return L5_IDLE[Math.floor(Math.random() * L5_IDLE.length)];
 }
 
 // ─── Уровень 3: Хранитель файловой системы ───────────────────────────────────
