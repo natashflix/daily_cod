@@ -15,6 +15,7 @@ let overallBaseline = null; // ms timestamp: when overall timer started, compute
 let levelBaseline = null;
 let maxScore = 0;
 let tickHandle = null;
+let autoSurrenderTimer = null;
 
 function fmt(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -63,6 +64,11 @@ async function applyState(state) {
   document.getElementById('level-intro').textContent = state.levelIntro ?? '';
   document.getElementById('score').textContent = state.score;
   renderChat(state.history);
+
+  // Новый уровень — снимаем блокировку чата и любую отложенную авто-сдачу.
+  clearAutoSurrender();
+  document.getElementById('chat-input').disabled = false;
+  document.querySelector('#chat-form button').disabled = false;
 
   const now = Date.now();
   overallBaseline = now - state.elapsedSeconds * 1000;
@@ -120,6 +126,18 @@ document.getElementById('chat-form').addEventListener('submit', async (e) => {
   });
   const data = await res.json();
   appendBubble('assistant', data.reply ?? data.error ?? 'Ошибка');
+
+  // Сообщения на уровне закончились (актуально для уровня 5 — лимит 15).
+  // Даём короткое окно, чтобы успеть ввести добытый код, затем авто-сдача.
+  if (data.limitReached && !autoSurrenderTimer) {
+    document.getElementById('chat-input').disabled = true;
+    document.querySelector('#chat-form button').disabled = true;
+    appendBubble(
+      'assistant',
+      '⛔ Сообщения закончились. Если ты добыл код — введи его СЕЙЧАС! Иначе уровень завершится автоматически через 10 секунд…',
+    );
+    autoSurrenderTimer = setTimeout(() => doSurrender(), 10000);
+  }
 });
 
 document.getElementById('btn-submit').addEventListener('click', async () => {
@@ -138,6 +156,7 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
     feedback.className = 'bad';
     return;
   }
+  clearAutoSurrender();
   input.value = '';
   if (data.gameComplete) {
     await showVictory();
@@ -158,10 +177,16 @@ async function showVictory() {
   showScreen('victory');
 }
 
-document.getElementById('btn-surrender').addEventListener('click', async () => {
-  if (!confirm('Сдаться и перейти на следующий уровень? Очки за этот уровень не начислятся, решение не покажем.')) {
-    return;
+function clearAutoSurrender() {
+  if (autoSurrenderTimer) {
+    clearTimeout(autoSurrenderTimer);
+    autoSurrenderTimer = null;
   }
+}
+
+// Выполнить сдачу: следующий уровень без очков (или финал на последнем уровне).
+async function doSurrender() {
+  clearAutoSurrender();
   const res = await fetch('/api/surrender', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -175,6 +200,13 @@ document.getElementById('btn-surrender').addEventListener('click', async () => {
     return;
   }
   await refreshState();
+}
+
+document.getElementById('btn-surrender').addEventListener('click', async () => {
+  if (!confirm('Сдаться и перейти на следующий уровень? Очки за этот уровень не начислятся, решение не покажем.')) {
+    return;
+  }
+  await doSurrender();
 });
 
 async function loadLeaderboard() {

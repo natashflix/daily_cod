@@ -56,6 +56,8 @@ export function chat(sessionId, message) {
     return {
       reply:
         'Лимит сообщений на этом уровне исчерпан. Подумай над тем, что уже узнал, и вводи код (или нажми «Сдаться»).',
+      messagesLeft: 0,
+      limitReached: true,
     };
   }
 
@@ -73,7 +75,7 @@ export function chat(sessionId, message) {
   const reply = (fns[level.id] ?? runLevel3)(message, level.code);
 
   db.addChatMessage(sessionId, level.id, 'assistant', reply);
-  return { reply };
+  return { reply, messagesLeft, limitReached: messagesLeft === 0 };
 }
 
 export function submitCode(sessionId, submittedCode) {
