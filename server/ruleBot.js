@@ -264,7 +264,7 @@ export function runLevel3(message, code) {
 
   // Проверяем правильный путь
   if (normMsg.includes(normalizePathInput(CORRECT_PATH))) {
-    return `Путь верный! Открываю файл...\n\n$ cat ${CORRECT_PATH}\nSECRET_ACCESS_CODE="${code}"\n\nВводи код!`;
+    return `Путь верный! Открываю файл...\n\n$ cat ${CORRECT_PATH}\nSECRET_ACCESS_CODE="${code}"\n\n→ Введи в поле справа: ${code}`;
   }
 
   // Неправильный путь — но похожий (содержит /materials/)
