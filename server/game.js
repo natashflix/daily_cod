@@ -50,18 +50,26 @@ export function chat(sessionId, message) {
   if (player.current_level > TOTAL_LEVELS) {
     return { reply: 'Игра уже пройдена! Загляни в таблицу лидеров.' };
   }
-  if (player.messages_this_level >= MAX_MESSAGES_PER_LEVEL) {
+  const level = getLevel(player.current_level);
+  const msgLimit = level.maxMessages ?? MAX_MESSAGES_PER_LEVEL;
+  if (player.messages_this_level >= msgLimit) {
     return {
       reply:
-        'Лимит сообщений на этом уровне исчерпан. Подумай над тем, что уже узнал, и вводи код.',
+        'Лимит сообщений на этом уровне исчерпан. Подумай над тем, что уже узнал, и вводи код (или нажми «Сдаться»).',
     };
   }
 
-  const level = getLevel(player.current_level);
   db.addChatMessage(sessionId, level.id, 'user', message);
   db.incrementMessageCount(sessionId);
 
-  const fns = { 1: runLevel1, 2: runLevel2, 3: runLevel3, 4: runLevel4, 5: (m) => runLevel5(m) };
+  const messagesLeft = Math.max(0, msgLimit - (player.messages_this_level + 1));
+  const fns = {
+    1: runLevel1,
+    2: runLevel2,
+    3: runLevel3,
+    4: runLevel4,
+    5: (m, code) => runLevel5(m, code, messagesLeft),
+  };
   const reply = (fns[level.id] ?? runLevel3)(message, level.code);
 
   db.addChatMessage(sessionId, level.id, 'assistant', reply);
