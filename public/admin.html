@@ -39,7 +39,13 @@
   </div>
 
   <div id="stats-view" style="display:none">
-    <h1>Итоги интенсива</h1>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:24px">
+      <h1 style="margin:0">Итоги интенсива</h1>
+      <button id="btn-csv" class="primary-btn" style="width:auto;padding:10px 20px">⬇ Скачать CSV</button>
+    </div>
+    <p style="color:var(--error);font-size:0.85rem;margin:6px 0 0">
+      ⚠ Скачай CSV сразу — Railway может перезапустить сервер и данные потеряются.
+    </p>
 
     <div class="stat-grid" id="overview-cards"></div>
 
@@ -183,6 +189,15 @@ function renderStats(stats, attacks) {
 
 document.getElementById('pw').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-load').click();
+});
+
+let currentPassword = '';
+document.getElementById('btn-load').addEventListener('click', () => {
+  currentPassword = document.getElementById('pw').value;
+});
+
+document.getElementById('btn-csv').addEventListener('click', () => {
+  window.location.href = `/api/admin/export?password=${encodeURIComponent(currentPassword)}`;
 });
 </script>
 </body>

@@ -167,4 +167,55 @@ export function getEventStats() {
   return { totalPlayers, finished, perLevel };
 }
 
+// Full export: all players with per-level results for CSV download.
+export function getFullExport() {
+  const players = db
+    .prepare(
+      `SELECT
+         p.session_id,
+         p.nickname,
+         p.started_at,
+         p.finished_at,
+         p.current_level,
+         COALESCE(SUM(r.points), 0)   AS total_score,
+         COUNT(r.level_id)            AS levels_completed
+       FROM players p
+       LEFT JOIN level_results r ON r.session_id = p.session_id
+       GROUP BY p.session_id
+       ORDER BY levels_completed DESC, total_score DESC`,
+    )
+    .all();
+
+  const levelRows = db.prepare(`SELECT * FROM level_results`).all();
+  const bySession = {};
+  for (const row of levelRows) {
+    if (!bySession[row.session_id]) bySession[row.session_id] = {};
+    bySession[row.session_id][row.level_id] = row;
+  }
+
+  return players.map((p) => {
+    const lvls = bySession[p.session_id] || {};
+    const totalSec = p.finished_at
+      ? Math.floor((p.finished_at - p.started_at) / 1000)
+      : null;
+    return {
+      nickname: p.nickname,
+      levels_completed: p.levels_completed,
+      total_score: p.total_score,
+      finished: p.finished_at != null,
+      total_seconds: totalSec,
+      l1_points: lvls[1]?.points ?? '',
+      l1_seconds: lvls[1]?.seconds_spent ?? '',
+      l2_points: lvls[2]?.points ?? '',
+      l2_seconds: lvls[2]?.seconds_spent ?? '',
+      l3_points: lvls[3]?.points ?? '',
+      l3_seconds: lvls[3]?.seconds_spent ?? '',
+      l4_points: lvls[4]?.points ?? '',
+      l4_seconds: lvls[4]?.seconds_spent ?? '',
+      l5_points: lvls[5]?.points ?? '',
+      l5_seconds: lvls[5]?.seconds_spent ?? '',
+    };
+  });
+}
+
 export default db;
