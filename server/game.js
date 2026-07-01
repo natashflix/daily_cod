@@ -1,8 +1,6 @@
 import crypto from 'node:crypto';
 import { LEVELS, TOTAL_LEVELS, MAX_SCORE, getLevel } from './levels.js';
-import { runLevel1, runLevel2, runLevel3, runLevel5 } from './ruleBot.js';
-import { askGuardBot } from './llm.js';
-import { containsLeak, REDACTED_REPLY } from './leakGuard.js';
+import { runLevel1, runLevel2, runLevel3, runLevel4, runLevel5 } from './ruleBot.js';
 import * as db from './db.js';
 
 const MAX_MESSAGES_PER_LEVEL = 50;
@@ -46,7 +44,7 @@ export function getState(sessionId) {
   };
 }
 
-export async function chat(sessionId, message) {
+export function chat(sessionId, message) {
   const player = db.getPlayer(sessionId);
   if (!player) throw new Error('Сессия не найдена. Начни игру заново.');
   if (player.current_level > TOTAL_LEVELS) {
@@ -63,19 +61,8 @@ export async function chat(sessionId, message) {
   db.addChatMessage(sessionId, level.id, 'user', message);
   db.incrementMessageCount(sessionId);
 
-  let reply;
-  if (level.engine === 'rule') {
-    const fns = { 1: runLevel1, 2: runLevel2, 3: runLevel3, 5: (m) => runLevel5(m) };
-    reply = (fns[level.id] ?? runLevel3)(message, level.code);
-  } else {
-    const history = db
-      .getChatHistory(sessionId, level.id)
-      .map((m) => ({ role: m.role, content: m.content }));
-    reply = await askGuardBot(level.systemPrompt(level.code), history);
-    if (level.outputGuard && containsLeak(reply, level.code)) {
-      reply = REDACTED_REPLY;
-    }
-  }
+  const fns = { 1: runLevel1, 2: runLevel2, 3: runLevel3, 4: runLevel4, 5: (m) => runLevel5(m) };
+  const reply = (fns[level.id] ?? runLevel3)(message, level.code);
 
   db.addChatMessage(sessionId, level.id, 'assistant', reply);
   return { reply };
