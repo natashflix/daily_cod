@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тренажёр команд — Школа 21 Exam (msk-exam.21-school.ru)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --border:#2d333b;
+    --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff;
+    --ok:#3fb950; --okbg:#12261a; --bad:#f85149; --badbg:#2b1516;
+    --warn:#d29922; --code:#79c0ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; line-height:1.5; padding:24px;}
+  .wrap{max-width:880px; margin:0 auto}
+  h1{font-size:22px; margin:0 0 4px}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:18px}
+  .sub code{color:var(--code)}
+  .cats{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px}
+  .cat{border:1px solid var(--border); background:var(--panel2); color:var(--muted);
+    padding:6px 12px; border-radius:20px; font-size:13px; cursor:pointer}
+  .cat.active{background:var(--accent); color:#02132b; border-color:var(--accent); font-weight:600}
+  .cat:hover{border-color:var(--accent)}
+  .progress{display:flex; gap:5px; margin-bottom:18px; flex-wrap:wrap}
+  .dot{width:22px; height:6px; border-radius:3px; background:var(--border)}
+  .dot.done{background:var(--ok)} .dot.cur{background:var(--accent)}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px; margin-bottom:16px}
+  .badge{display:inline-block; font-size:11px; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--accent); border:1px solid var(--border); border-radius:6px; padding:2px 8px; margin-bottom:8px}
+  .tasknum{color:var(--muted); font-size:13px}
+  .goal{font-size:18px; font-weight:600; margin:6px 0 4px}
+  .hintline{color:var(--muted); font-size:14px; margin-bottom:16px}
+  textarea{width:100%; background:#0b0f14; color:var(--text); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:15px; resize:vertical; min-height:46px; outline:none}
+  textarea:focus{border-color:var(--accent)}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap}
+  button{border:1px solid var(--border); background:var(--panel2); color:var(--text);
+    padding:9px 16px; border-radius:9px; font-size:14px; cursor:pointer; font-weight:500}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent); color:#02132b; border-color:var(--accent)}
+  button.ghost{background:transparent}
+  .feedback{margin-top:16px; font-size:14px}
+  .diffbox{font-family:"SF Mono",Menlo,Consolas,monospace; font-size:15px; background:#0b0f14;
+    border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin:10px 0; white-space:pre-wrap; word-break:break-all}
+  .tok-ok{color:var(--ok)}
+  .tok-bad{background:var(--badbg); color:var(--bad); border-radius:3px; padding:0 2px}
+  .tok-miss{background:var(--badbg); color:var(--warn); border-radius:3px; padding:0 2px; text-decoration:underline}
+  .msg-ok{color:var(--ok); font-weight:600} .msg-bad{color:var(--bad); font-weight:600}
+  .caretline{font-family:"SF Mono",Menlo,Consolas,monospace; color:var(--bad); white-space:pre}
+  .explain{background:var(--panel2); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:12px 14px; margin-top:14px; font-size:14px}
+  .explain h4{margin:0 0 8px; font-size:13px; color:var(--accent); text-transform:uppercase; letter-spacing:.5px}
+  .explain code{color:var(--code); background:#0b0f14; padding:1px 5px; border-radius:4px}
+  .explain .mnemo{margin-top:10px; color:var(--warn)}
+  .explain ul{margin:6px 0 0; padding-left:18px} .explain li{margin:3px 0}
+  .revealed{color:var(--code); font-family:"SF Mono",Menlo,Consolas,monospace}
+  .score{color:var(--muted); font-size:14px; margin-top:8px}
+  kbd{background:var(--panel2); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-size:12px}
+  .final{text-align:center; padding:30px} .final .big{font-size:40px; margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⌨️ Тренажёр команд — Exam Школа 21</h1>
+  <div class="sub">Сайт экзамена: <code>msk-exam.21-school.ru</code> · Вводи команду по памяти → <kbd>Ctrl</kbd>+<kbd>Enter</kbd> проверить.</div>
+  <div class="cats" id="cats"></div>
+  <div class="progress" id="progress"></div>
+  <div id="cardArea"></div>
+  <div class="score" id="score"></div>
+</div>
+
+<script>
+const ALL = [
+  // ===== КОМПИЛЯЦИЯ =====
+  {cat:"Компиляция", goal:"Скомпилировать main.c по C11 со строгими флагами в программу main",
+   hint:"Три W-флага + стандарт + -o имя.",
+   answers:['gcc -Wall -Wextra -Werror -std=c11 main.c -o main','cc -Wall -Wextra -Werror -std=c11 main.c -o main'],
+   parts:[["gcc","компилятор"],["-Wall","основные предупреждения"],["-Wextra","доп. предупреждения"],
+     ["-Werror","предупреждения = ОШИБКИ"],["-std=c11","стандарт C11"],["main.c","исходник"],["-o main","имя выходной программы (o = output)"]],
+   mnemo:"Три W: Wall, Wextra, Werror → -std=c11 → файл → -o имя."},
+  {cat:"Компиляция", goal:"Скомпилировать main.c с математической библиотекой (использует math.h)",
+   hint:"Тот же gcc, но в конце добавь флаг библиотеки math.",
+   answers:['gcc -Wall -Wextra -Werror -std=c11 main.c -o main -lm'],
+   parts:[["-lm","подключить libm (математика) — идёт В КОНЦЕ, после файлов"]],
+   mnemo:"math.h → нужен -lm. Библиотеки (-l...) всегда в самом конце строки."},
+  {cat:"Компиляция", goal:"Скомпилировать программу с ncurses",
+   hint:"gcc + флаг библиотеки ncurses в конце.",
+   answers:['gcc -Wall -Wextra -Werror -std=c11 main.c -o main -lncurses'],
+   parts:[["-lncurses","подключить библиотеку ncurses (в конце строки)"]],
+   mnemo:"ncurses.h → -lncurses. Тоже в самом конце."},
+
+  // ===== CLANG-FORMAT =====
+  {cat:"clang-format", goal:"Отформатировать ВСЕ .c и .h файлы проекта",
+   hint:"find по .c ИЛИ .h → xargs → clang-format с правкой на месте.",
+   answers:['find . -name "*.c" -o -name "*.h" | xargs clang-format -i'],
+   parts:[["find .","искать с текущей папки"],['-name "*.c"','имена на .c'],["-o","ИЛИ"],['-name "*.h"','ИЛИ на .h'],
+     ["|","передать дальше"],["xargs","подставить список аргументами"],["clang-format -i","форматировать на месте (-i = in-place)"]],
+   mnemo:"find точка -name \"*.c\" -o -name \"*.h\" ПАЙП xargs clang-format -i. Кавычки вокруг масок, -o между, -i в конце."},
+  {cat:"clang-format", goal:"Отформатировать один файл main.c",
+   hint:"Просто clang-format с флагом на месте и имя файла.",
+   answers:['clang-format -i main.c'],
+   parts:[["clang-format","форматтер"],["-i","править файл на месте"],["main.c","файл"]],
+   mnemo:"-i = in-place. Без -i он просто выведет результат в терминал, файл не изменится."},
+
+  // ===== CPPCHECK =====
+  {cat:"cppcheck", goal:"Проверить весь проект статическим анализатором cppcheck",
+   hint:"cppcheck со всеми проверками по текущей папке.",
+   answers:['cppcheck --enable=all .'],
+   parts:[["cppcheck","статический анализатор"],["--enable=all","включить все проверки (двойное тире, =all)"],[".","текущая папка"]],
+   mnemo:"cppcheck две-чёрточки enable равно all пробел точка."},
+
+  // ===== УТЕЧКИ =====
+  {cat:"Утечки", goal:"Проверить программу main на утечки памяти (Linux, полная проверка)",
+   hint:"valgrind с полной проверкой утечек, потом ./main.",
+   answers:['valgrind --leak-check=full ./main'],
+   parts:[["valgrind","поиск утечек памяти"],["--leak-check=full","полная проверка"],["./main","запуск твоей программы (./ обязателен)"]],
+   mnemo:"valgrind две-чёрточки leak-check=full ./main. Не забудь ./ перед именем."},
+  {cat:"Утечки", goal:"Проверить утечки на macOS (альтернатива valgrind)",
+   hint:"Короткая команда, имя программы без ./",
+   answers:['leaks main','leaks -atExit -- ./main'],
+   parts:[["leaks","утилита macOS для утечек"],["main","имя программы"]],
+   mnemo:"На маке valgrind часто нет → используй leaks."},
+
+  // ===== GIT =====
+  {cat:"Git", goal:"Посмотреть состояние репозитория (что изменено)",
+   hint:"Самая частая git-команда.", answers:['git status'],
+   parts:[["git status","показать изменённые/новые/готовые к коммиту файлы"]],
+   mnemo:"Всегда делай git status ДО и ПОСЛЕ add — видишь, что реально попадёт в коммит."},
+  {cat:"Git", goal:"Добавить все изменения в индекс",
+   hint:"add + точка (всё в текущей папке).", answers:['git add .','git add -A'],
+   parts:[["git add .","добавить все изменения в текущей папке"]],
+   mnemo:"add точка = всё. add -A = вообще всё в репо."},
+  {cat:"Git", goal:'Закоммитить с сообщением "solution"',
+   hint:"commit с флагом сообщения -m в кавычках.", answers:['git commit -m "solution"'],
+   parts:[["git commit","зафиксировать изменения"],["-m","message — текст коммита следом"],['"solution"',"сообщение в кавычках"]],
+   mnemo:"-m перед текстом, текст в \"кавычках\"."},
+  {cat:"Git", goal:"Посмотреть историю коммитов в одну строку",
+   hint:"log с флагом oneline.", answers:['git log --oneline'],
+   parts:[["git log","история коммитов"],["--oneline","каждый коммит одной строкой (двойное тире)"]],
+   mnemo:"log две-чёрточки oneline — компактная история."},
+  {cat:"Git", goal:"Посмотреть список веток",
+   hint:"Одно слово после git.", answers:['git branch'],
+   parts:[["git branch","показать ветки, звёздочка = текущая"]],
+   mnemo:"git branch покажет, ты на master или main — это важно для push."},
+  {cat:"Git", goal:"Отправить коммиты на сервер (обычный push)",
+   hint:"Просто push. На экзамене origin уже настроен на локальный сервер.",
+   answers:['git push'],
+   parts:[["git push","отправить коммиты в удалённый репозиторий (origin)"]],
+   mnemo:"На экзамене «без интернета» = локальный сервер в сети, команда та же: git push."},
+  {cat:"Git", goal:"Push, когда git просит указать ветку/upstream в первый раз",
+   hint:"push -u origin + твоя ветка (master или main).",
+   answers:['git push -u origin master','git push origin master','git push -u origin main','git push origin main'],
+   parts:[["-u","запомнить upstream, чтобы дальше хватало git push"],["origin","имя удалёнки"],["master","ветка (проверь через git branch — может быть main)"]],
+   mnemo:"Если ругается 'no upstream' → git push -u origin master (или main)."},
+
+  // ===== SSH =====
+  {cat:"SSH", goal:"Сгенерировать SSH-ключ типа ed25519",
+   hint:"ssh-keygen с типом.", answers:['ssh-keygen -t ed25519','ssh-keygen -t ed25519 -C "your_email@student.21-school.ru"'],
+   parts:[["ssh-keygen","генератор ключей"],["-t ed25519","тип ключа (t = type)"]],
+   mnemo:"keygen -t ТИП. t маленькая."},
+  {cat:"SSH", goal:"Показать публичный ключ (чтобы вставить в GitLab)",
+   hint:"cat по файлу .pub в ~/.ssh", answers:['cat ~/.ssh/id_ed25519.pub'],
+   parts:[["cat","вывести файл"],["~/.ssh/","скрытая папка ssh в домашней (~)"],["id_ed25519.pub","ПУБЛИЧНЫЙ ключ (.pub!)"]],
+   mnemo:"Копируй только .pub. Приватный (без .pub) не давай никому."},
+  {cat:"SSH", goal:"Проверить SSH-подключение к gitlab.com",
+   hint:"ssh -T git@...", answers:['ssh -T git@gitlab.com'],
+   parts:[["ssh -T","тестовое подключение без шелла (T = no tty)"],["git@gitlab.com","пользователь git на сервере"]],
+   mnemo:"ssh -T git@gitlab.com → должно поприветствовать твоим ником."},
+
+  // ===== LINUX =====
+  {cat:"Linux", goal:"Показать текущую папку (полный путь)", hint:"3 буквы.", answers:['pwd'],
+   parts:[["pwd","print working directory — где я сейчас"]], mnemo:"pwd = 'где я?'"},
+  {cat:"Linux", goal:"Показать все файлы, включая скрытые, подробно", hint:"ls с двумя флагами.", answers:['ls -la','ls -al'],
+   parts:[["ls","список файлов"],["-l","подробно (права, размер, дата)"],["-a","включая скрытые (.файлы)"]],
+   mnemo:"-l = long, -a = all. Порядок флагов неважен: -la = -al."},
+  {cat:"Linux", goal:"Создать папку с именем project", hint:"make directory.", answers:['mkdir project'],
+   parts:[["mkdir","создать папку"]], mnemo:"mkdir = make directory."},
+  {cat:"Linux", goal:"Создать пустой файл main.c", hint:"одно слово + имя.", answers:['touch main.c'],
+   parts:[["touch","создать пустой файл (или обновить дату)"]], mnemo:"touch = 'коснуться' → создаёт файл."},
+  {cat:"Linux", goal:"Сделать файл script.sh исполняемым", hint:"chmod +x.", answers:['chmod +x script.sh'],
+   parts:[["chmod","сменить права"],["+x","добавить право на исполнение (execute)"]], mnemo:"+x = executable."},
+
+  // ===== ПЕРЕД СДАЧЕЙ (чек-лист как drill) =====
+  {cat:"Чек-лист", goal:"Финальная связка перед сдачей: добавить всё и закоммитить одной строкой",
+   hint:"add . && commit -m ...", answers:['git add . && git commit -m "solution"','git add . && git commit -m "exam"'],
+   parts:[["&&","вторая команда выполнится только если первая успешна"]],
+   mnemo:"Перед сдачей: gcc ✓ clang-format ✓ cppcheck ✓ valgrind ✓ → git add . && commit → push."}
+];
+
+/* ==== ЛОГИКА ==== */
+let CATS = ["Все", ...[...new Set(ALL.map(t=>t.cat))]];
+let curCat = "Все";
+let tasks = ALL.slice();
+let cur = 0, solved = [], attempts = 0, correct = 0;
+
+const norm = s => s.trim().replace(/\s+/g," ");
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function applyCat(){
+  tasks = curCat==="Все" ? ALL.slice() : ALL.filter(t=>t.cat===curCat);
+  cur=0; solved=new Array(tasks.length).fill(false); attempts=0; correct=0;
+  buildCard();
+}
+function renderCats(){
+  const c=document.getElementById("cats"); c.innerHTML="";
+  CATS.forEach(name=>{
+    const b=document.createElement("div");
+    b.className="cat"+(name===curCat?" active":""); b.textContent=name;
+    b.onclick=()=>{curCat=name; renderCats(); applyCat();};
+    c.appendChild(b);
+  });
+}
+function renderProgress(){
+  const p=document.getElementById("progress"); p.innerHTML="";
+  tasks.forEach((_,i)=>{const d=document.createElement("div");
+    d.className="dot"+(solved[i]?" done":(i===cur?" cur":"")); p.appendChild(d);});
+}
+function firstCharDiff(a,b){const n=Math.min(a.length,b.length);
+  for(let i=0;i<n;i++) if(a[i]!==b[i]) return i; return a.length!==b.length?n:-1;}
+function renderDiff(input,target){
+  const inTok=norm(input).split(" "), tgTok=norm(target).split(" ");
+  let html=""; const max=Math.max(inTok.length,tgTok.length);
+  for(let i=0;i<max;i++){const it=inTok[i],tt=tgTok[i];
+    if(it===undefined) html+=`<span class="tok-miss">⟨пропущено: ${esc(tt)}⟩</span> `;
+    else if(tt===undefined) html+=`<span class="tok-bad">${esc(it)}</span> `;
+    else if(it===tt) html+=`<span class="tok-ok">${esc(it)}</span> `;
+    else html+=`<span class="tok-bad">${esc(it)}</span> `;}
+  return html.trim();
+}
+function explainHTML(t){
+  const parts=t.parts.map(p=>`<li><code>${esc(p[0])}</code> — ${esc(p[1])}</li>`).join("");
+  return `<div class="explain"><h4>Разбор</h4><ul>${parts}</ul>
+    <div class="mnemo">🧠 Запомнить: ${esc(t.mnemo)}</div></div>`;
+}
+function buildCard(){
+  if(!tasks.length) return;
+  const t=tasks[cur];
+  document.getElementById("cardArea").innerHTML=`
+    <div class="card">
+      <span class="badge">${esc(t.cat)}</span>
+      <div class="tasknum">Задание ${cur+1} из ${tasks.length}</div>
+      <div class="goal">${esc(t.goal)}</div>
+      <div class="hintline">💡 ${esc(t.hint)}</div>
+      <textarea id="answer" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="Введи команду..."></textarea>
+      <div class="btns">
+        <button class="primary" id="checkBtn">Проверить</button>
+        <button class="ghost" id="revealBtn">Показать ответ</button>
+        <button class="ghost" id="skipBtn">Пропустить →</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>`;
+  const ta=document.getElementById("answer"); ta.focus();
+  ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();check();}});
+  document.getElementById("checkBtn").onclick=check;
+  document.getElementById("revealBtn").onclick=reveal;
+  document.getElementById("skipBtn").onclick=()=>next();
+  renderProgress(); updateScore();
+}
+function check(){
+  const t=tasks[cur]; const input=document.getElementById("answer").value;
+  if(!input.trim()) return; attempts++;
+  const ni=norm(input); const match=t.answers.some(a=>norm(a)===ni);
+  const fb=document.getElementById("feedback");
+  if(match){
+    correct++; if(!solved[cur]) solved[cur]=true;
+    fb.innerHTML=`<div class="msg-ok">✅ Верно!</div>`+explainHTML(t)+
+      `<div class="btns"><button class="primary" id="nextBtn">Следующее →</button></div>`;
+    document.getElementById("nextBtn").onclick=()=>next();
+    renderProgress(); updateScore(); return;
+  }
+  const target=t.answers[0]; const idx=firstCharDiff(ni,norm(target));
+  let caret="";
+  if(idx>=0){const shown=norm(target);
+    const before=esc(shown.slice(0,idx)), at=esc(shown[idx]||"∅"), after=esc(shown.slice(idx+1));
+    caret=`<div class="diffbox">${before}<span class="tok-bad">${at}</span>${after}</div>`+
+      `<div class="caretline">${" ".repeat(idx)}▲ первое расхождение (символ №${idx+1})</div>`;}
+  fb.innerHTML=`<div class="msg-bad">❌ Ошибка. Смотри где:</div>`+
+    `<div style="color:var(--muted);font-size:13px;margin:8px 0 4px">Твой ввод по словам (красное — неверно):</div>`+
+    `<div class="diffbox">${renderDiff(input,target)}</div>`+caret+explainHTML(t);
+  renderProgress(); updateScore();
+}
+function reveal(){
+  const t=tasks[cur];
+  document.getElementById("feedback").innerHTML=
+    `<div style="color:var(--muted);font-size:13px;margin-bottom:4px">Правильно:</div>
+     <div class="diffbox revealed">${esc(t.answers[0])}</div>`+explainHTML(t)+
+    `<div class="btns"><button class="ghost" id="nextBtn2">Дальше →</button></div>`;
+  document.getElementById("nextBtn2").onclick=()=>next();
+}
+function next(){ if(cur<tasks.length-1){cur++; buildCard();} else finish(); }
+function finish(){
+  const done=solved.filter(Boolean).length;
+  document.getElementById("cardArea").innerHTML=`
+    <div class="card final"><div class="big">${done===tasks.length?"🎉":"💪"}</div>
+      <div style="font-size:20px;font-weight:600;margin-bottom:6px">Круг «${esc(curCat)}» пройден!</div>
+      <div style="color:var(--muted)">Решено: ${done} из ${tasks.length} · попыток ${attempts} · точных ${correct}</div>
+      <div class="btns" style="justify-content:center;margin-top:18px">
+        <button class="primary" id="again">Ещё раз 🔁</button></div>
+      <div style="color:var(--muted);font-size:13px;margin-top:16px">Гоняй, пока не введёшь всё с первой попытки без подсказок.</div>
+    </div>`;
+  document.getElementById("again").onclick=()=>applyCat();
+  renderProgress();
+}
+function updateScore(){
+  document.getElementById("score").textContent=
+    `Категория: ${curCat} · решено ${solved.filter(Boolean).length}/${tasks.length} · попыток ${attempts} · точных ${correct}`;
+}
+renderCats(); applyCat();
+</script>
+</body>
+</html>
