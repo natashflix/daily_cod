@@ -188,18 +188,24 @@ const ALL = [
    mnemo:"Перед сдачей: gcc ✓ clang-format ✓ cppcheck ✓ valgrind ✓ → git add . && commit → push."}
 ];
 
-/* ==== ЛОГИКА ==== */
+/* ==== ЛОГИКА (режим «очередь»: правильные уходят, ошибочные — на второй круг) ==== */
 let CATS = ["Все", ...[...new Set(ALL.map(t=>t.cat))]];
 let curCat = "Все";
-let tasks = ALL.slice();
-let cur = 0, solved = [], attempts = 0, correct = 0;
+let queue = [];        // очередь ещё не выученных заданий (объекты задач)
+let total = 0;         // всего заданий в категории
+let mastered = 0;      // сколько уже выучено (введено верно и убрано)
+let mistakes = 0;      // всего ошибок
+let pending = null;    // 'correct' | 'retry' — результат текущей карточки
 
 const norm = s => s.trim().replace(/\s+/g," ");
 const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
 function applyCat(){
-  tasks = curCat==="Все" ? ALL.slice() : ALL.filter(t=>t.cat===curCat);
-  cur=0; solved=new Array(tasks.length).fill(false); attempts=0; correct=0;
+  const pool = curCat==="Все" ? ALL.slice() : ALL.filter(t=>t.cat===curCat);
+  queue = shuffle(pool.slice());
+  total = queue.length; mastered = 0; mistakes = 0; pending = null;
   buildCard();
 }
 function renderCats(){
@@ -213,8 +219,14 @@ function renderCats(){
 }
 function renderProgress(){
   const p=document.getElementById("progress"); p.innerHTML="";
-  tasks.forEach((_,i)=>{const d=document.createElement("div");
-    d.className="dot"+(solved[i]?" done":(i===cur?" cur":"")); p.appendChild(d);});
+  // выученные — зелёные, текущая — синяя, остальные (ещё в очереди) — серые
+  for(let i=0;i<total;i++){
+    const d=document.createElement("div");
+    if(i<mastered) d.className="dot done";
+    else if(i===mastered) d.className="dot cur";
+    else d.className="dot";
+    p.appendChild(d);
+  }
 }
 function firstCharDiff(a,b){const n=Math.min(a.length,b.length);
   for(let i=0;i<n;i++) if(a[i]!==b[i]) return i; return a.length!==b.length?n:-1;}
@@ -234,19 +246,21 @@ function explainHTML(t){
     <div class="mnemo">🧠 Запомнить: ${esc(t.mnemo)}</div></div>`;
 }
 function buildCard(){
-  if(!tasks.length) return;
-  const t=tasks[cur];
+  if(!queue.length){ finish(); return; }
+  pending=null;
+  const t=queue[0];
+  const left=queue.length;
   document.getElementById("cardArea").innerHTML=`
     <div class="card">
       <span class="badge">${esc(t.cat)}</span>
-      <div class="tasknum">Задание ${cur+1} из ${tasks.length}</div>
+      <div class="tasknum">Осталось выучить: ${left} · выучено ${mastered} из ${total}</div>
       <div class="goal">${esc(t.goal)}</div>
       <div class="hintline">💡 ${esc(t.hint)}</div>
       <textarea id="answer" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="Введи команду..."></textarea>
       <div class="btns">
         <button class="primary" id="checkBtn">Проверить</button>
         <button class="ghost" id="revealBtn">Показать ответ</button>
-        <button class="ghost" id="skipBtn">Пропустить →</button>
+        <button class="ghost" id="skipBtn">Пропустить (вернётся) →</button>
       </div>
       <div class="feedback" id="feedback"></div>
     </div>`;
@@ -254,57 +268,70 @@ function buildCard(){
   ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();check();}});
   document.getElementById("checkBtn").onclick=check;
   document.getElementById("revealBtn").onclick=reveal;
-  document.getElementById("skipBtn").onclick=()=>next();
+  document.getElementById("skipBtn").onclick=()=>{ pending='retry'; advance(); };
   renderProgress(); updateScore();
 }
 function check(){
-  const t=tasks[cur]; const input=document.getElementById("answer").value;
-  if(!input.trim()) return; attempts++;
+  const t=queue[0]; const input=document.getElementById("answer").value;
+  if(!input.trim()) return;
   const ni=norm(input); const match=t.answers.some(a=>norm(a)===ni);
   const fb=document.getElementById("feedback");
   if(match){
-    correct++; if(!solved[cur]) solved[cur]=true;
-    fb.innerHTML=`<div class="msg-ok">✅ Верно!</div>`+explainHTML(t)+
+    pending='correct';
+    fb.innerHTML=`<div class="msg-ok">✅ Верно! Это задание больше не повторится.</div>`+explainHTML(t)+
       `<div class="btns"><button class="primary" id="nextBtn">Следующее →</button></div>`;
-    document.getElementById("nextBtn").onclick=()=>next();
+    document.getElementById("nextBtn").onclick=()=>advance();
     renderProgress(); updateScore(); return;
   }
+  pending='retry'; mistakes++;
   const target=t.answers[0]; const idx=firstCharDiff(ni,norm(target));
   let caret="";
   if(idx>=0){const shown=norm(target);
     const before=esc(shown.slice(0,idx)), at=esc(shown[idx]||"∅"), after=esc(shown.slice(idx+1));
     caret=`<div class="diffbox">${before}<span class="tok-bad">${at}</span>${after}</div>`+
       `<div class="caretline">${" ".repeat(idx)}▲ первое расхождение (символ №${idx+1})</div>`;}
-  fb.innerHTML=`<div class="msg-bad">❌ Ошибка. Смотри где:</div>`+
+  fb.innerHTML=`<div class="msg-bad">❌ Ошибка. Смотри где (это задание вернётся на второй круг):</div>`+
     `<div style="color:var(--muted);font-size:13px;margin:8px 0 4px">Твой ввод по словам (красное — неверно):</div>`+
-    `<div class="diffbox">${renderDiff(input,target)}</div>`+caret+explainHTML(t);
+    `<div class="diffbox">${renderDiff(input,target)}</div>`+caret+explainHTML(t)+
+    `<div class="btns"><button class="primary" id="retryBtn">Попробовать снова</button>`+
+    `<button class="ghost" id="laterBtn">Отложить на потом →</button></div>`;
+  document.getElementById("retryBtn").onclick=()=>{ // остаёмся на этом же задании
+    document.getElementById("feedback").innerHTML="";
+    const ta=document.getElementById("answer"); ta.value=""; ta.focus();
+  };
+  document.getElementById("laterBtn").onclick=()=>advance(); // уводим в конец очереди
   renderProgress(); updateScore();
 }
 function reveal(){
-  const t=tasks[cur];
+  const t=queue[0]; pending='retry';
   document.getElementById("feedback").innerHTML=
-    `<div style="color:var(--muted);font-size:13px;margin-bottom:4px">Правильно:</div>
+    `<div style="color:var(--muted);font-size:13px;margin-bottom:4px">Правильно (задание вернётся, чтобы закрепить):</div>
      <div class="diffbox revealed">${esc(t.answers[0])}</div>`+explainHTML(t)+
-    `<div class="btns"><button class="ghost" id="nextBtn2">Дальше →</button></div>`;
-  document.getElementById("nextBtn2").onclick=()=>next();
+    `<div class="btns"><button class="primary" id="nextBtn2">Дальше →</button></div>`;
+  document.getElementById("nextBtn2").onclick=()=>advance();
 }
-function next(){ if(cur<tasks.length-1){cur++; buildCard();} else finish(); }
+/* Применяем результат карточки к очереди */
+function advance(){
+  if(pending==='correct'){ queue.shift(); mastered++; }       // выучено → убираем навсегда
+  else { queue.push(queue.shift()); }                          // ошибка/отложено → в конец очереди
+  pending=null;
+  if(queue.length===0) finish(); else buildCard();
+}
 function finish(){
-  const done=solved.filter(Boolean).length;
   document.getElementById("cardArea").innerHTML=`
-    <div class="card final"><div class="big">${done===tasks.length?"🎉":"💪"}</div>
-      <div style="font-size:20px;font-weight:600;margin-bottom:6px">Круг «${esc(curCat)}» пройден!</div>
-      <div style="color:var(--muted)">Решено: ${done} из ${tasks.length} · попыток ${attempts} · точных ${correct}</div>
+    <div class="card final"><div class="big">🎉</div>
+      <div style="font-size:20px;font-weight:600;margin-bottom:6px">Все команды категории «${esc(curCat)}» выучены!</div>
+      <div style="color:var(--muted)">Выучено: ${mastered} из ${total} · всего ошибок по пути: ${mistakes}</div>
       <div class="btns" style="justify-content:center;margin-top:18px">
-        <button class="primary" id="again">Ещё раз 🔁</button></div>
-      <div style="color:var(--muted);font-size:13px;margin-top:16px">Гоняй, пока не введёшь всё с первой попытки без подсказок.</div>
+        <button class="primary" id="again">Пройти заново 🔁</button></div>
+      <div style="color:var(--muted);font-size:13px;margin-top:16px">Каждое задание ты в итоге ввёл верно. Смени категорию сверху или пройди заново.</div>
     </div>`;
   document.getElementById("again").onclick=()=>applyCat();
   renderProgress();
 }
 function updateScore(){
   document.getElementById("score").textContent=
-    `Категория: ${curCat} · решено ${solved.filter(Boolean).length}/${tasks.length} · попыток ${attempts} · точных ${correct}`;
+    `Категория: ${curCat} · выучено ${mastered}/${total} · осталось ${queue.length} · ошибок ${mistakes}`;
 }
 renderCats(); applyCat();
 </script>
