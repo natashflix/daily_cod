@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXAM MODE — Школа 21 · Rank 02 симулятор</title>
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#12161d; --panel2:#1a212b; --border:#283040;
+    --text:#e6edf3; --muted:#7d8896; --accent:#58a6ff;
+    --ok:#3fb950; --bad:#f85149; --warn:#d29922; --code:#79c0ff; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif; line-height:1.55; padding:20px}
+  .wrap{max-width:940px; margin:0 auto}
+  .mono{font-family:"SF Mono",Menlo,Consolas,monospace}
+  h1{font-size:20px; margin:0} .tag{color:var(--purple); font-weight:700; letter-spacing:1px}
+  .topbar{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:16px}
+  .timer{font-family:"SF Mono",Menlo,Consolas,monospace; font-size:26px; font-weight:700; padding:6px 16px;
+    border:1px solid var(--border); border-radius:10px; background:var(--panel)}
+  .timer.warn{color:var(--warn); border-color:var(--warn)}
+  .timer.danger{color:var(--bad); border-color:var(--bad); animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.55}}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px; margin-bottom:16px}
+  .setup label{display:block; margin:14px 0 6px; color:var(--muted); font-size:14px}
+  select,input[type=number]{background:#0b0f14; color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:8px 12px; font-size:15px; width:100%}
+  button{border:1px solid var(--border); background:var(--panel2); color:var(--text);
+    padding:10px 18px; border-radius:9px; font-size:14px; cursor:pointer; font-weight:600}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent); color:#02132b; border-color:var(--accent)}
+  button.danger{background:transparent; border-color:var(--bad); color:var(--bad)}
+  button.go{background:var(--ok); border-color:var(--ok); color:#02160a; font-size:16px; padding:12px 26px}
+  .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+  .taskhead{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap}
+  .tname{font-size:22px; font-weight:700; color:var(--purple)}
+  .lvl{color:var(--muted); font-size:13px}
+  .filebox{font-family:"SF Mono",Menlo,Consolas,monospace; background:#0b0f14; border:1px solid var(--border);
+    border-radius:8px; padding:6px 12px; display:inline-block; margin:8px 0; color:var(--code); font-size:13px}
+  .allowed{color:var(--muted); font-size:13px; margin:4px 0 14px}
+  .allowed b{color:var(--warn)}
+  .desc{white-space:pre-wrap; margin:12px 0}
+  .ex{margin:14px 0}
+  .ex h4{margin:0 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted)}
+  .exline{font-family:"SF Mono",Menlo,Consolas,monospace; font-size:13px; background:#0b0f14; border:1px solid var(--border);
+    border-radius:8px; padding:10px 12px; white-space:pre-wrap; word-break:break-all}
+  .exline .cmd{color:var(--code)} .exline .out{color:var(--ok)}
+  textarea{width:100%; background:#070a0e; color:#d7e0ea; border:1px solid var(--border); border-radius:10px;
+    padding:14px; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:14px; min-height:280px; resize:vertical;
+    outline:none; tab-size:4; line-height:1.5}
+  textarea:focus{border-color:var(--accent)}
+  .hidden{display:none}
+  .reveal{border-left:3px solid var(--ok); background:#0c1710; border-radius:0 10px 10px 0; padding:14px; margin-top:14px}
+  .reveal h4{margin:0 0 8px; color:var(--ok); font-size:13px; text-transform:uppercase; letter-spacing:.5px}
+  pre{margin:0; white-space:pre-wrap; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:13px; color:#cfe3d6}
+  .checklist{margin-top:14px; background:var(--panel2); border-radius:10px; padding:14px}
+  .checklist h4{margin:0 0 8px; font-size:13px; color:var(--accent); text-transform:uppercase; letter-spacing:.5px}
+  .checklist label{display:flex; gap:8px; align-items:flex-start; margin:6px 0; font-size:14px; cursor:pointer}
+  .edgelist{margin:8px 0 0; padding-left:18px; color:var(--warn); font-size:13px}
+  .edgelist li{margin:3px 0}
+  .progress{display:flex; gap:6px; margin:8px 0}
+  .pdot{width:30px; height:6px; border-radius:3px; background:var(--border)}
+  .pdot.cur{background:var(--accent)} .pdot.done{background:var(--ok)}
+  .note{color:var(--muted); font-size:13px; margin-top:10px}
+  .final .big{font-size:44px; text-align:center}
+  code{color:var(--code); background:#0b0f14; padding:1px 5px; border-radius:4px; font-size:13px}
+  .runbox{background:#0b0f14; border:1px dashed var(--border); border-radius:8px; padding:10px 12px; margin-top:8px;
+    font-family:"SF Mono",Menlo,Consolas,monospace; font-size:12px; color:var(--muted); white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div><span class="tag">● EXAM MODE</span> &nbsp;<span class="lvl">Школа 21 · Rank 02 · боевой режим</span></div>
+    <div class="timer" id="timer">--:--</div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="card setup" id="setup">
+    <h1>Симулятор экзамена</h1>
+    <p class="note">Реальные задачи rank 02, таймер, форматы I/O и скрытые edge-cases. Проверка — компиляцией (команды в каждой задаче) или вставь код в чат Claude — скомпилирую и прогоню тесты.</p>
+    <label>Сколько задач в сессии</label>
+    <select id="nTasks">
+      <option value="1">1 задача</option>
+      <option value="2">2 задачи</option>
+      <option value="3" selected>3 задачи (как на экзамене)</option>
+      <option value="0">Все подряд</option>
+    </select>
+    <label>Время на всю сессию (минут)</label>
+    <input type="number" id="minutes" value="45" min="1" max="240">
+    <label style="display:flex;gap:8px;align-items:center;margin-top:14px;cursor:pointer">
+      <input type="checkbox" id="hardMode" style="width:auto"> Hard: спрятать примеры вывода (только текст задания)
+    </label>
+    <div class="btns"><button class="go" id="startBtn">▶ Начать экзамен</button></div>
+    <p class="note">Правила как на реальном: компилируется под <code>-Wall -Wextra -Werror -std=c11</code>, без утечек, все edge-cases. Один warning = 0.</p>
+  </div>
+
+  <!-- EXAM -->
+  <div id="exam" class="hidden">
+    <div class="progress" id="progress"></div>
+    <div class="card" id="taskCard"></div>
+  </div>
+</div>
+
+<script>
+/* ================= БАНК ЗАДАЧ (реальный rank 02) ================= */
+const TASKS = [
+  {
+    name:"first_word", file:"first_word.c", allowed:"write",
+    desc:`Напиши программу, которая принимает строку и выводит её первое слово, затем '\\n'.
+Слово — отрезок строки, ограниченный пробелами/табами или началом/концом строки.
+Если аргументов не ровно 1, или слов нет — вывести только '\\n'.`,
+    examples:[
+      ["./a.out \"FOR PONY\"","FOR"],
+      ["./a.out \"this        ...    is sparta, then again, maybe not\"","this"],
+      ["./a.out \"   \"",""],
+      ["./a.out | cat -e","$"]
+    ],
+    edge:["ноль/лишние аргументы → только \\n","строка из одних пробелов/табов → только \\n","ведущие пробелы перед первым словом"],
+    solution:`#include <unistd.h>
+
+int main(int argc, char **argv)
+{
+    int i = 0;
+
+    if (argc != 2)
+        return (write(1, "\\n", 1), 0);
+    while (argv[1][i] == ' ' || argv[1][i] == '\\t')
+        i++;
+    while (argv[1][i] && argv[1][i] != ' ' && argv[1][i] != '\\t')
+        write(1, &argv[1][i++], 1);
+    write(1, "\\n", 1);
+    return (0);
+}`
+  },
+  {
+    name:"fizzbuzz", file:"fizzbuzz.c", allowed:"printf",
+    desc:`Выведи числа от 1 до 100, каждое на своей строке.
+Вместо кратных 3 — "fizz", кратных 5 — "buzz", кратных и 3 и 5 — "fizzbuzz".`,
+    examples:[
+      ["./a.out | head -5","1\\n2\\nfizz\\n4\\nbuzz"],
+      ["./a.out | sed -n '15p'","fizzbuzz"]
+    ],
+    edge:["порядок проверок: сначала 15 (и 3 и 5), потом 3, потом 5","ровно 100 строк, каждая с \\n"],
+    solution:`#include <stdio.h>
+
+int main(void)
+{
+    int i = 1;
+
+    while (i <= 100)
+    {
+        if (i % 15 == 0)
+            printf("fizzbuzz");
+        else if (i % 3 == 0)
+            printf("fizz");
+        else if (i % 5 == 0)
+            printf("buzz");
+        else
+            printf("%d", i);
+        printf("\\n");
+        i++;
+    }
+    return (0);
+}`
+  },
+  {
+    name:"ft_strcpy", file:"ft_strcpy.c", allowed:"—  (только сама функция, main даёт проверяющая система)",
+    desc:`Воспроизведи strcpy(3). Прототип:
+    char *ft_strcpy(char *s1, char *s2);
+Копирует строку s2 (включая '\\0') в s1 и возвращает s1. Отправляешь ТОЛЬКО функцию, без main.`,
+    examples:[
+      ["ft_strcpy(dst, \"hello\")","dst == \"hello\", возвращает dst"]
+    ],
+    edge:["обязательно копировать завершающий '\\0'","вернуть указатель s1"],
+    solution:`char *ft_strcpy(char *s1, char *s2)
+{
+    int i = 0;
+
+    while (s2[i])
+    {
+        s1[i] = s2[i];
+        i++;
+    }
+    s1[i] = '\\0';
+    return (s1);
+}`
+  },
+  {
+    name:"ulstr", file:"ulstr.c", allowed:"write",
+    desc:`Принимает строку и выводит её, инвертируя регистр каждой буквы (a↔A), '\\n' в конце.
+Небуквенные символы не меняются. Если аргументов не 1 — просто '\\n'.`,
+    examples:[
+      ["./a.out \"Hello! How are you?\"","hELLO! hOW ARE YOU?"],
+      ["./a.out | cat -e","$"]
+    ],
+    edge:["не буквы оставить как есть","0 аргументов → только \\n"],
+    solution:`#include <unistd.h>
+
+int main(int argc, char **argv)
+{
+    int  i = 0;
+    char c;
+
+    if (argc == 2)
+        while (argv[1][i])
+        {
+            c = argv[1][i];
+            if (c >= 'a' && c <= 'z')
+                c -= 32;
+            else if (c >= 'A' && c <= 'Z')
+                c += 32;
+            write(1, &c, 1);
+            i++;
+        }
+    write(1, "\\n", 1);
+    return (0);
+}`
+  },
+  {
+    name:"epur_str", file:"epur_str.c", allowed:"write",
+    desc:`Принимает строку и выводит её с "чистыми" пробелами: между словами ровно один пробел,
+без ведущих и хвостовых пробелов. В конце '\\n'. Слова разделены пробелами/табами.
+Если аргументов не ровно 1 — только '\\n'.`,
+    examples:[
+      ["./a.out \"See      you   later\"  | cat -e","See you later$"],
+      ["./a.out \"  lorem,ipsum  dolor   sit amet \" | cat -e","lorem,ipsum dolor sit amet$"]
+    ],
+    edge:["ведущие/хвостовые пробелы убрать","несколько пробелов/табов между словами → один пробел","строка из пробелов → только \\n"],
+    solution:`#include <unistd.h>
+
+int is_sp(char c){ return (c == ' ' || c == '\\t'); }
+
+int main(int argc, char **argv)
+{
+    int i = 0;
+    int first = 1;
+
+    if (argc == 2)
+        while (argv[1][i])
+        {
+            while (is_sp(argv[1][i]))
+                i++;
+            if (!argv[1][i])
+                break ;
+            if (!first)
+                write(1, " ", 1);
+            first = 0;
+            while (argv[1][i] && !is_sp(argv[1][i]))
+                write(1, &argv[1][i++], 1);
+        }
+    write(1, "\\n", 1);
+    return (0);
+}`
+  },
+  {
+    name:"rev_wstr", file:"rev_wstr.c", allowed:"write",
+    desc:`Принимает строку и выводит её слова в обратном порядке, разделяя одним пробелом, '\\n' в конце.
+Слова разделены пробелами/табами. Если аргументов не ровно 1 — только '\\n'.`,
+    examples:[
+      ["./a.out \"you are important\"","important are you"],
+      ["./a.out \"   what   is   this   \"","this is what"]
+    ],
+    edge:["идти с конца строки","лишние пробелы не должны давать двойных","0 аргументов → \\n"],
+    solution:`#include <unistd.h>
+
+int is_sp(char c){ return (c == ' ' || c == '\\t'); }
+
+int main(int argc, char **argv)
+{
+    int i, start, end, first;
+
+    if (argc != 2)
+        return (write(1, "\\n", 1), 0);
+    i = 0;
+    while (argv[1][i])
+        i++;
+    i--;
+    first = 1;
+    while (i >= 0)
+    {
+        while (i >= 0 && is_sp(argv[1][i]))
+            i--;
+        if (i < 0)
+            break ;
+        end = i;
+        while (i >= 0 && !is_sp(argv[1][i]))
+            i--;
+        start = i + 1;
+        if (!first)
+            write(1, " ", 1);
+        first = 0;
+        while (start <= end)
+            write(1, &argv[1][start++], 1);
+    }
+    write(1, "\\n", 1);
+    return (0);
+}`
+  },
+  {
+    name:"wdmatch", file:"wdmatch.c", allowed:"write",
+    desc:`Принимает две строки. Если можно составить первую, вычёркивая некоторые символы второй
+БЕЗ смены порядка — вывести первую строку и '\\n'. Иначе — только '\\n'.
+Если аргументов не ровно 2 — только '\\n'.`,
+    examples:[
+      ["./a.out \"abc\" \"aXbXXcX\"","abc"],
+      ["./a.out \"abc\" \"acb\"",""]
+    ],
+    edge:["порядок символов важен","совпало только если прошли ВСЮ первую строку","аргументов не 2 → \\n"],
+    solution:`#include <unistd.h>
+
+int main(int argc, char **argv)
+{
+    int i = 0, j = 0;
+
+    if (argc != 3)
+        return (write(1, "\\n", 1), 0);
+    while (argv[1][i] && argv[2][j])
+    {
+        if (argv[1][i] == argv[2][j])
+            i++;
+        j++;
+    }
+    if (!argv[1][i])
+    {
+        i = 0;
+        while (argv[1][i])
+            write(1, &argv[1][i++], 1);
+    }
+    write(1, "\\n", 1);
+    return (0);
+}`
+  },
+  {
+    name:"search_and_replace", file:"search_and_replace.c", allowed:"write",
+    desc:`Принимает 3 аргумента: строку и два символа c1, c2. Выводит строку, заменяя КАЖДОЕ
+вхождение c1 на c2, '\\n' в конце.
+Если аргументов не 3, или 2-й/3-й аргумент не ровно один символ — только '\\n'.`,
+    examples:[
+      ["./a.out \"Papache is the best\" a o","Popoche is the best"],
+      ["./a.out \"ok\" \"ab\" \".\"",""]
+    ],
+    edge:["c1 и c2 должны быть длиной ровно 1","argc != 4 → \\n","заменять ВСЕ вхождения"],
+    solution:`#include <unistd.h>
+
+int one_char(char *s){ return (s[0] && !s[1]); }
+
+int main(int argc, char **argv)
+{
+    int i = 0;
+
+    if (argc != 4 || !one_char(argv[2]) || !one_char(argv[3]))
+        return (write(1, "\\n", 1), 0);
+    while (argv[1][i])
+    {
+        if (argv[1][i] == argv[2][0])
+            write(1, &argv[3][0], 1);
+        else
+            write(1, &argv[1][i], 1);
+        i++;
+    }
+    write(1, "\\n", 1);
+    return (0);
+}`
+  },
+  {
+    name:"str_capitalizer", file:"str_capitalizer.c", allowed:"write",
+    desc:`Принимает один или несколько аргументов. Для каждого выводит его на отдельной строке,
+делая первую букву каждого слова заглавной, остальные буквы — строчными.
+Слово — последовательность букв. Если аргументов нет — только '\\n'.`,
+    examples:[
+      ["./a.out \"first SECOND\" \"a p C d\"","First Second\\nA P C D"],
+      ["./a.out \"HELLO woRlD\"","Hello World"]
+    ],
+    edge:["каждый argv — своя строка","первая буква слова → upper, остальные → lower","цифры/символы сбрасывают 'начало слова'"],
+    solution:`#include <unistd.h>
+
+int main(int argc, char **argv)
+{
+    int  a = 1, i;
+    char c;
+    int  start;
+
+    if (argc == 1)
+        return (write(1, "\\n", 1), 0);
+    while (a < argc)
+    {
+        i = 0;
+        start = 1;
+        while (argv[a][i])
+        {
+            c = argv[a][i];
+            if (c >= 'a' && c <= 'z' && start)
+                c -= 32;
+            else if (c >= 'A' && c <= 'Z' && !start)
+                c += 32;
+            start = !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
+            write(1, &c, 1);
+            i++;
+        }
+        write(1, "\\n", 1);
+        a++;
+    }
+    return (0);
+}`
+  }
+];
+
+/* ================= ЛОГИКА ================= */
+let session = [], cur = 0, timeLeft = 0, timerId = null;
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const showNL = s => s.replace(/\\n/g,"↵\n"); // визуализируем \n
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+$("startBtn").onclick = () => {
+  const n = parseInt($("nTasks").value,10);
+  const mins = Math.max(1, parseInt($("minutes").value,10)||45);
+  window.HARD = $("hardMode").checked;
+  let pool = shuffle(TASKS.slice());
+  session = (n===0) ? pool : pool.slice(0, Math.min(n, pool.length));
+  cur = 0; timeLeft = mins*60;
+  $("setup").classList.add("hidden");
+  $("exam").classList.remove("hidden");
+  startTimer();
+  renderTask();
+};
+
+function startTimer(){
+  updateTimer();
+  timerId = setInterval(()=>{
+    timeLeft--; updateTimer();
+    if(timeLeft<=0){ clearInterval(timerId); timeUp(); }
+  },1000);
+}
+function updateTimer(){
+  const m=Math.floor(timeLeft/60), s=timeLeft%60;
+  const el=$("timer");
+  el.textContent = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  el.className = "timer" + (timeLeft<=30?" danger":(timeLeft<=120?" warn":""));
+}
+function timeUp(){
+  $("taskCard").innerHTML = `<div class="final"><div class="big">⏰</div>
+    <h1 style="text-align:center">Время вышло!</h1>
+    <p class="note" style="text-align:center">На экзамене таймер жёсткий. Смотри эталоны и гоняй ещё раз, пока не будешь укладываться.</p>
+    <div class="btns" style="justify-content:center"><button class="primary" onclick="location.reload()">🔁 Заново</button></div></div>`;
+}
+
+function renderProgress(){
+  const p=$("progress"); p.innerHTML="";
+  session.forEach((_,i)=>{const d=document.createElement("div");
+    d.className="pdot"+(i<cur?" done":(i===cur?" cur":"")); p.appendChild(d);});
+}
+
+function renderTask(){
+  renderProgress();
+  const t = session[cur];
+  const exHtml = window.HARD ? `<p class="note">Hard-режим: примеры вывода скрыты. Ориентируйся на текст задания.</p>`
+    : t.examples.map(e=>`<div class="exline"><span class="cmd">$ ${esc(e[0])}</span><br><span class="out">${esc(showNL(e[1]))||"<i style='color:#7d8896'>(пустой вывод, только перевод строки)</i>"}</span></div>`).join("");
+  $("taskCard").innerHTML = `
+    <div class="taskhead">
+      <div class="tname">${esc(t.name)}</div>
+      <div class="lvl">Задача ${cur+1} из ${session.length}</div>
+    </div>
+    <div class="filebox">📄 ${esc(t.file)}</div>
+    <div class="allowed">Разрешено: <b>${esc(t.allowed)}</b></div>
+    <div class="desc">${esc(t.desc)}</div>
+    <div class="ex"><h4>Примеры</h4>${exHtml}</div>
+
+    <h4 style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px">Твоё решение</h4>
+    <textarea id="code" spellcheck="false" placeholder="Пиши код здесь (Tab работает)..."></textarea>
+
+    <div class="runbox"># Проверить локально:
+gcc -Wall -Wextra -Werror -std=c11 ${esc(t.file)} -o a.out && ./a.out ...
+valgrind --leak-check=full ./a.out ...
+# либо вставь код в чат Claude — скомпилирую и прогоню тесты за тебя</div>
+
+    <div class="btns">
+      <button class="primary" id="revealBtn">Показать эталон + edge-cases</button>
+      <button id="selfBtn">Самопроверка ✓</button>
+      <button class="go" id="nextBtn">${cur < session.length-1 ? "Следующая →" : "Завершить"}</button>
+    </div>
+    <div id="extra"></div>`;
+
+  const ta=$("code");
+  ta.focus();
+  ta.addEventListener("keydown",e=>{
+    if(e.key==="Tab"){e.preventDefault();
+      const s=ta.selectionStart, en=ta.selectionEnd;
+      ta.value=ta.value.slice(0,s)+"    "+ta.value.slice(en);
+      ta.selectionStart=ta.selectionEnd=s+4;}
+  });
+  $("revealBtn").onclick=()=>revealSolution(t);
+  $("selfBtn").onclick=()=>selfCheck(t);
+  $("nextBtn").onclick=()=>{ if(cur<session.length-1){cur++; renderTask();} else finish(); };
+}
+
+function revealSolution(t){
+  const edges = t.edge.map(e=>`<li>${esc(e)}</li>`).join("");
+  $("extra").innerHTML = `
+    <div class="reveal">
+      <h4>Эталонное решение · ${esc(t.file)}</h4>
+      <pre>${esc(t.solution)}</pre>
+      <div style="margin-top:12px"><b style="color:var(--warn)">На чём валятся (edge-cases):</b>
+        <ul class="edgelist">${edges}</ul></div>
+    </div>`;
+}
+
+function selfCheck(t){
+  $("extra").innerHTML = `
+    <div class="checklist">
+      <h4>Самопроверка перед сдачей</h4>
+      <label><input type="checkbox"> Компилируется под <code>-Wall -Wextra -Werror -std=c11</code> без единого warning</label>
+      <label><input type="checkbox"> Обработан случай неверного числа аргументов (обычно вывод только <code>\\n</code>)</label>
+      <label><input type="checkbox"> Обработана пустая строка / строка из одних пробелов</label>
+      <label><input type="checkbox"> Нет лишнего/недостающего <code>\\n</code> в конце (проверил через <code>| cat -e</code>)</label>
+      <label><input type="checkbox"> valgrind: <code>All heap blocks were freed — no leaks</code> (если есть malloc)</label>
+      <label><input type="checkbox"> Использованы только разрешённые функции</label>
+      <div class="edgelist" style="list-style:none;padding-left:0;margin-top:8px">Специфично для этой задачи: ${t.edge.map(esc).join(" · ")}</div>
+    </div>`;
+}
+
+function finish(){
+  clearInterval(timerId);
+  const used = session.length;
+  $("progress").innerHTML="";
+  $("taskCard").innerHTML = `
+    <div class="final"><div class="big">🏁</div>
+      <h1 style="text-align:center">Сессия завершена</h1>
+      <p class="note" style="text-align:center">Пройдено задач: ${used}. Осталось времени: ${Math.floor(timeLeft/60)}:${String(timeLeft%60).padStart(2,"0")}</p>
+      <p class="note" style="text-align:center">Сверь каждое решение с эталоном и прогони edge-cases. На реале — компилируй СРАЗУ с -Werror и проверяй <code>| cat -e</code>.</p>
+      <div class="btns" style="justify-content:center"><button class="primary" onclick="location.reload()">🔁 Новая сессия</button></div>
+    </div>`;
+}
+</script>
+</body>
+</html>
