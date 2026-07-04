@@ -206,13 +206,8 @@
 
         <div class="field">
           <label>Зелёные дни 🟢
-            <span class="hint">из 12 (день зелёный, если ≥40% заданий сделано)</span></label>
+            <span class="hint">из 12; остальные автоматом красные 🔴 (день зелёный при ≥40% заданий)</span></label>
           <input type="number" id="greenDays" min="0" max="12" step="1" value="0" required />
-        </div>
-        <div class="field">
-          <label>Ручные дни ✋
-            <span class="hint">дни, закрытые ручной проверкой</span></label>
-          <input type="number" id="manualDays" min="0" max="12" step="1" value="0" required />
         </div>
 
         <div class="field">
@@ -266,13 +261,13 @@
         </div>
 
         <div class="field full">
-          <label>Был ли чит / списывание? 🚨
-            <span class="hint">Вертер бдит — честность важнее</span></label>
+          <label>Совесть чиста? 😇
+            <span class="hint">честность на воде всё-таки ценится</span></label>
           <div class="seg danger">
             <input type="radio" name="cheat" id="cheat-no" value="0" checked>
-            <label for="cheat-no">Нет, всё честно</label>
+            <label for="cheat-no">Чиста</label>
             <input type="radio" name="cheat" id="cheat-yes" value="1">
-            <label for="cheat-yes">Был грешок…</label>
+            <label for="cheat-yes">Ну… почти</label>
           </div>
         </div>
       </div>
@@ -348,8 +343,7 @@ const CFG = {
   // Веса вклада каждого пункта (не обязаны в сумме давать 100 — нормируем)
   W: {
     points:   22,
-    green:    16,
-    manual:    6,
+    green:    22,   // зелёные дни несут весь вес по дням (красные — их отсутствие)
     proj1:     9,
     proj2:     9,
     exam1:    10,
@@ -389,8 +383,7 @@ function compute(){
   const d = {
     points: num('points'),
     avgTime: num('avgTime'),
-    greenDays: num('greenDays'),
-    manualDays: num('manualDays'),
+    greenDays: Math.min(CFG.TOTAL_DAYS, num('greenDays')),
     proj1: num('proj1'), proj2: num('proj2'),
     exam1: num('exam1'), exam2: num('exam2'),
     games: num('games'), wins: num('wins'),
@@ -399,6 +392,8 @@ function compute(){
     violations: num('violations'),
     cheat: $('cheat-yes').checked ? 1 : 0,
   };
+  // красные дни считаются автоматом: всё, что не зелёное из 12
+  d.redDays = Math.max(0, CFG.TOTAL_DAYS - d.greenDays);
 
   // штрафы бьют по HP: чит −100, каждое грубое нарушение −VIOLATION_HP_PENALTY
   const penaltyHp = d.cheat*CFG.CHEAT_HP_PENALTY + d.violations*CFG.VIOLATION_HP_PENALTY;
@@ -408,7 +403,6 @@ function compute(){
   const n = {
     points: clamp01(effHp / CFG.POINTS_FULL),
     green:  clamp01(d.greenDays / CFG.TOTAL_DAYS),
-    manual: clamp01(d.manualDays / CFG.TOTAL_DAYS),
     proj1:  clamp01(d.proj1 / CFG.PROJECT_HP_MAX),
     proj2:  clamp01(d.proj2 / CFG.PROJECT_HP_MAX),
     exam1:  clamp01(d.exam1 / CFG.EXAM_HP_MAX),
@@ -449,10 +443,10 @@ const TXT = {
     "Берег был так близко… но не в этот раз. Плаваем дальше!",
     "Ты не потонул — ты выбрал длинный маршрут. Ещё кружок? 🔁",
   ],
-  cheat: [ // приписка при чите (−100 HP)
-    "🚨 Вертер зафиксировал чит: −100 HP, уточка краснеет",
-    "🚨 чит замечен: минус 100 HP к заплыву, Вертер записал 👀",
-    "🚨 −100 HP за списывание — Вертер всё видел",
+  cheat: [ // тонкая приписка при чите (штраф применяется молча)
+    "Вертер как-то подозрительно косится в твою сторону 👀",
+    "Течение почему-то стало сильнее…",
+    "Кажется, кто-то на вышке что-то заметил",
   ],
 };
 const pick = a => a[Math.floor(Math.random()*a.length)];
@@ -472,12 +466,14 @@ function renderResult(r){
   $('subflavor').textContent = passed
     ? 'проходит на основное обучение… но это внутренняя проверка ещё поглядит'
     : 'основное обучение пока машет с берега';
+  // зелёные / красные дни (красные посчитаны автоматом из 12)
+  $('subflavor').textContent += ` · 🟢 ${r.d.greenDays} / 🔴 ${r.d.redDays} дн.`;
 
   // флейвор-текст по вердикту
   let pool = passed ? (edge ? TXT.edge : TXT.pass) : TXT.fail;
   $('flavor').textContent = pick(pool);
 
-  // чит — приписка (Вертер зафиксировал −100 HP), вердикт при этом честный
+  // чит — тонкая приписка (штраф −100 HP применяется молча), вердикт честный
   if (cheated){
     $('subflavor').textContent += ` · ${pick(TXT.cheat)}`;
   }
@@ -509,7 +505,7 @@ function renderResult(r){
 }
 
 const BAR_LABELS = {
-  points:'Баллы (HP)', green:'Зелёные дни', manual:'Ручные дни',
+  points:'Баллы (HP)', green:'Зелёные дни',
   proj1:'Групповой №1', proj2:'Групповой №2', exam1:'Экзамен №1', exam2:'Экзамен №2',
   games:'Участие в играх', wins:'Другие победы',
   events:'Мероприятия', time:'Время в школе',
