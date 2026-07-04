@@ -135,6 +135,26 @@
   .bubble{position:absolute; z-index:4; font-size:22px; opacity:0}
   @keyframes rise{0%{opacity:0; transform:translateY(0)}20%{opacity:.9}100%{opacity:0; transform:translateY(-100px)}}
 
+  /* Вертер — внутренняя машина-автогрейдер: выезжает и топит утку выстрелом */
+  .verter{position:absolute; right:6px; top:42%; z-index:8; text-align:center; line-height:1;
+    opacity:0; transform:translateY(-16px) scale(.7);
+    transition:opacity .3s ease, transform .3s cubic-bezier(.3,1.4,.5,1);
+    filter:drop-shadow(0 5px 6px rgba(0,0,0,.4));}
+  .verter .bot{font-size:34px}
+  .verter .verter-tag{display:block; font-size:9px; font-weight:900; letter-spacing:1.5px; color:#ff5b5b;
+    background:rgba(8,18,28,.78); border-radius:5px; padding:1px 5px; margin-top:1px}
+  .verter.show{opacity:1; transform:none}
+  .verter.recoil{animation:recoil .25s ease}
+  @keyframes recoil{40%{transform:translateX(6px) rotate(4deg)}}
+
+  .bolt{position:absolute; z-index:7; width:16px; height:6px; border-radius:3px;
+    background:linear-gradient(90deg,#ff3b3b,#ffec6b); box-shadow:0 0 10px #ff5b5b; opacity:0}
+  .reticle{position:absolute; z-index:6; width:40px; height:40px; margin:-20px 0 0 -20px;
+    border:3px solid #ff3b3b; border-radius:50%; box-shadow:0 0 12px #ff5b5b, inset 0 0 6px #ff5b5b; opacity:0}
+  @keyframes aim{0%{opacity:0; transform:scale(1.7)}45%{opacity:1; transform:scale(1)}100%{opacity:.25; transform:scale(1)}}
+  .boom{position:absolute; z-index:9; font-size:34px; opacity:0}
+  @keyframes boom{0%{opacity:0; transform:scale(.4)}30%{opacity:1; transform:scale(1.2)}100%{opacity:0; transform:scale(1.6)}}
+
   /* suspense-подпись, пока утка плывёт */
   .swim-status{text-align:center; margin:14px 2px 0; font-weight:800; font-size:16px; color:var(--muted); transition:opacity .3s}
   .swim-status .dots::after{content:"…"; animation:dots 1.3s steps(4,end) infinite}
@@ -300,6 +320,7 @@
         <div class="waves"></div>
         <div class="start"></div>
         <div class="shore"><span class="flag">🏖️</span></div>
+        <div class="verter" id="verter"><span class="bot">🤖</span><span class="verter-tag">ВЕРТЕР</span></div>
         <div class="duck" id="duck">
           <svg viewBox="0 0 150 115" xmlns="http://www.w3.org/2000/svg" aria-label="жёлтая уточка">
             <!-- хвостик -->
@@ -625,13 +646,15 @@ function swimDuck(r, passed, onDone){
   duck.style.top=DUCK_TOP;
   duck.style.opacity='1';
   duck.style.transform='translateX(24px) rotate(0deg)';
-  // почистить старые пузыри
-  pool.querySelectorAll('.bubble').forEach(b=>b.remove());
+  // почистить старые пузыри и следы Вертера
+  pool.querySelectorAll('.bubble, .bolt, .boom, .reticle').forEach(b=>b.remove());
+  $('verter').classList.remove('show','recoil');
 
   const W = pool.clientWidth;
   const shoreX = W - 118;             // граница берега (с поправкой на крупную утку)
-  // при неудаче доплывёт тем дальше, чем выше скор — почти-провал уходит к берегу
-  const failX = Math.round((r.score / CFG.PASS) * (shoreX * 0.85));
+  // при неудаче всегда выплывает в бассейн (мин. ~34%), а почти-провал уходит к берегу
+  const frac = Math.min(1, r.score / CFG.PASS);
+  const failX = Math.round(shoreX * (0.34 + 0.5 * frac));
   const SWIM = CFG.SWIM_MS;
 
   // старт покачивания
@@ -651,9 +674,11 @@ function swimDuck(r, passed, onDone){
       }, SWIM);
     } else {
       duck.style.left = failX + 'px';
-      setTimeout(()=>{                        // тонет, потом раскрываем итог
-        sink(duck, pool);
-        setTimeout(onDone, 2100);
+      setTimeout(()=>{                        // Вертер выезжает и топит утку выстрелом
+        verterShoots(pool, duck, ()=>{
+          sink(duck, pool);
+          setTimeout(onDone, 2100);
+        });
       }, SWIM);
     }
   }, 400);
@@ -675,6 +700,55 @@ function sink(duck, pool){
     b.style.animation=`rise ${1.4+Math.random()}s ease-in ${i*0.2}s forwards`;
     pool.appendChild(b);
   }
+}
+
+/* ---------- Вертер выезжает, наводится и стреляет по утке ---------- */
+function verterShoots(pool, duck, onHit){
+  const verter = $('verter');
+  verter.classList.add('show');
+
+  // цель — голова утки; источник — «ствол» Вертера
+  const tx = duck.offsetLeft + 66;
+  const ty = duck.offsetTop + 34;
+
+  // 1) красный прицел на утке
+  setTimeout(()=>{
+    const ret = document.createElement('div');
+    ret.className = 'reticle';
+    ret.style.left = tx + 'px';
+    ret.style.top  = ty + 'px';
+    ret.style.animation = 'aim .5s ease-out forwards';
+    pool.appendChild(ret);
+
+    // 2) выстрел: снаряд летит от Вертера к утке
+    setTimeout(()=>{
+      const vx = verter.offsetLeft + 6;
+      const vy = verter.offsetTop + 24;
+      verter.classList.add('recoil');
+      const bolt = document.createElement('div');
+      bolt.className = 'bolt';
+      bolt.style.left = vx + 'px';
+      bolt.style.top  = vy + 'px';
+      bolt.style.opacity = '1';
+      pool.appendChild(bolt);
+      void bolt.offsetWidth;
+      bolt.style.transition = 'left .4s linear, top .4s linear';
+      bolt.style.left = tx + 'px';
+      bolt.style.top  = ty + 'px';
+
+      // 3) попадание: вспышка + утка идёт ко дну
+      setTimeout(()=>{
+        bolt.remove();
+        const boom = document.createElement('div');
+        boom.className = 'boom'; boom.textContent = '💥';
+        boom.style.left = (tx - 16) + 'px';
+        boom.style.top  = (ty - 18) + 'px';
+        boom.style.animation = 'boom .7s ease-out forwards';
+        pool.appendChild(boom);
+        onHit();
+      }, 430);
+    }, 520);
+  }, 380);
 }
 
 /* ---------- submit ---------- */
