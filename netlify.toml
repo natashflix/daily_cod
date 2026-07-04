@@ -1,5 +1,7 @@
 # Netlify: статичный хостинг игры «Бассейн 21».
-# Публикуем папку public; корень сайта отдаёт игру через _redirects.
+# Собираем отдельную папку dist, куда кладём игру как index.html —
+# так корень сайта отдаёт именно уточку, а старая игра (public/index.html)
+# на сайт не попадает. Единый источник игры — public/basseyn.html.
 [build]
-  publish = "public"
-  command = ""
+  command = "mkdir -p dist && cp public/basseyn.html dist/index.html"
+  publish = "dist"
