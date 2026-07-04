@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Бассейн 21 🦆 — доплыл или потонул?</title>
+<style>
+  :root{
+    --bg1:#0b2a4a; --bg2:#0e3a63;
+    --water1:#2aa6d6; --water2:#1e7fb8; --water3:#155e8e;
+    --sky1:#7fd0ff; --sky2:#bfeaff;
+    --sand:#f4e2b8; --sand2:#e7cf95;
+    --ink:#0b2138; --card:#ffffff; --muted:#5b7893;
+    --good:#1f9d55; --warn:#e08a00; --bad:#c8442a;
+    --accent:#ffd23f;
+    --shadow:0 18px 50px rgba(4,20,40,.35);
+    --radius:20px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(127,208,255,.35), transparent 60%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:28px 16px 60px;
+  }
+  .wrap{width:100%; max-width:760px}
+
+  .brand{
+    display:flex; align-items:center; gap:12px; color:#dff2ff;
+    margin:2px 4px 18px; font-weight:800; letter-spacing:.3px;
+  }
+  .brand .logo{
+    font-size:30px; filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));
+  }
+  .brand small{display:block; font-weight:600; color:#9fc6e6; letter-spacing:.2px}
+
+  .card{
+    background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px 24px; animation:pop .35s ease both;
+  }
+  @keyframes pop{from{transform:translateY(10px) scale(.99);opacity:0}to{transform:none;opacity:1}}
+
+  h1{font-size:26px; margin:0 0 6px; line-height:1.15}
+  h2{font-size:20px; margin:0 0 4px}
+  .lead{color:var(--muted); margin:0 0 18px; line-height:1.5}
+
+  /* ---------- disclaimer ---------- */
+  .disc-badge{
+    display:inline-block; background:#fff3d6; color:#7a5a00;
+    border:1px solid #ffdf8a; padding:5px 12px; border-radius:999px;
+    font-size:12.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .disc-box{
+    background:linear-gradient(180deg,#fffaf0,#fff4dc);
+    border:1px solid #ffe6a8; border-radius:16px; padding:18px 18px;
+    color:#6b4e10; line-height:1.55; font-weight:600;
+  }
+  .disc-box b{color:#8a5a00}
+
+  /* ---------- form ---------- */
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:560px){.grid{grid-template-columns:1fr}}
+  .field{display:flex; flex-direction:column; gap:6px}
+  .field.full{grid-column:1/-1}
+  label{font-size:13.5px; font-weight:700; color:#31506d}
+  label .hint{display:block; font-weight:500; color:var(--muted); font-size:12px; margin-top:1px}
+  input[type=number],input[type=text]{
+    appearance:none; width:100%; padding:11px 12px; font-size:15px;
+    border:1.6px solid #d7e3ef; border-radius:12px; background:#f8fbff; color:var(--ink);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input[type=number]:focus,input[type=text]:focus{outline:none; border-color:var(--water1); box-shadow:0 0 0 4px rgba(42,166,214,.15); background:#fff}
+  .seg{display:flex; gap:8px}
+  .seg input{position:absolute; opacity:0; pointer-events:none}
+  .seg label{
+    flex:1; text-align:center; padding:10px 8px; border:1.6px solid #d7e3ef; border-radius:12px;
+    background:#f8fbff; cursor:pointer; font-weight:700; color:#4b6a86; transition:.15s;
+  }
+  .seg input:checked + label{background:var(--water1); border-color:var(--water1); color:#fff; box-shadow:0 6px 16px rgba(30,127,184,.35)}
+  .seg.danger input:checked + label{background:var(--bad); border-color:var(--bad); box-shadow:0 6px 16px rgba(200,68,42,.35)}
+
+  .btn{
+    appearance:none; border:none; cursor:pointer; font-weight:800; font-size:16px;
+    padding:15px 20px; border-radius:14px; color:#083a12;
+    background:linear-gradient(180deg,#ffe066,var(--accent));
+    box-shadow:0 12px 26px rgba(255,210,63,.45); transition:transform .12s, filter .15s;
+  }
+  .btn:hover{filter:brightness(1.03)} .btn:active{transform:translateY(2px)}
+  .btn.block{width:100%; margin-top:8px}
+  .btn.ghost{background:#eef4fb; color:#2b4b68; box-shadow:none}
+
+  .row-actions{display:flex; gap:10px; margin-top:18px}
+  .row-actions .btn{flex:1}
+
+  /* ---------- pool / duck ---------- */
+  .pool-wrap{margin-top:6px}
+  .pool{
+    position:relative; height:190px; border-radius:16px; overflow:hidden;
+    background:linear-gradient(180deg,var(--sky2),var(--sky1) 34%,var(--water1) 34%,var(--water2) 70%,var(--water3));
+    box-shadow:inset 0 -10px 30px rgba(0,0,0,.15);
+  }
+  .sun{position:absolute; top:12px; right:18px; font-size:34px; filter:drop-shadow(0 4px 8px rgba(255,190,0,.4)); animation:sway 6s ease-in-out infinite}
+  .cloud{position:absolute; top:14px; font-size:26px; opacity:.9}
+  .cloud.c1{left:14%; animation:drift 22s linear infinite}
+  .cloud.c2{left:52%; top:8px; font-size:20px; animation:drift 30s linear infinite}
+  @keyframes drift{from{transform:translateX(-40px)}to{transform:translateX(120px)}}
+  @keyframes sway{50%{transform:translateY(-4px) rotate(6deg)}}
+
+  .shore{position:absolute; right:0; top:34%; bottom:0; width:64px;
+    background:linear-gradient(180deg,var(--sand),var(--sand2));
+    border-left:3px dashed rgba(255,255,255,.5);
+  }
+  .shore .flag{position:absolute; top:-20px; right:16px; font-size:24px}
+  .start{position:absolute; left:0; top:34%; bottom:0; width:26px; background:linear-gradient(180deg,#c9d7e2,#a9bccb)}
+
+  .waves{position:absolute; left:0; right:0; top:34%; height:14px; overflow:hidden; opacity:.6}
+  .waves::before{content:"〰〰〰〰〰〰〰〰〰〰〰〰〰〰"; position:absolute; white-space:nowrap; font-size:16px; color:#cbeeff; animation:wavemove 4s linear infinite}
+  @keyframes wavemove{from{transform:translateX(0)}to{transform:translateX(-64px)}}
+
+  .duck{
+    position:absolute; left:0; top:41%; font-size:34px; z-index:5;
+    transform:translateX(24px);
+    filter:drop-shadow(0 6px 6px rgba(0,20,40,.35));
+    transition:left 3.4s cubic-bezier(.35,.1,.3,1);
+  }
+  .duck.bob{animation:bob 1s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-5px) rotate(-3deg)}}
+  .duck.sink{transition:top 1.6s ease-in, left 1.6s ease-in, opacity 1.6s, transform 1.6s; animation:none}
+  .bubble{position:absolute; z-index:4; font-size:16px; opacity:0}
+  @keyframes rise{0%{opacity:0; transform:translateY(0)}20%{opacity:.9}100%{opacity:0; transform:translateY(-70px)}}
+
+  .ripple{position:absolute; top:44%; width:20px; height:8px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.55); border-top:none; opacity:0}
+
+  /* ---------- result ---------- */
+  .score-head{display:flex; align-items:center; gap:16px; margin:18px 0 8px; flex-wrap:wrap}
+  .score-ring{
+    --p:0; position:relative; width:96px; height:96px; border-radius:50%; flex:none;
+    background:conic-gradient(var(--ring,#1f9d55) calc(var(--p)*1%), #e6eef6 0);
+    display:grid; place-items:center;
+  }
+  .score-ring::after{content:""; position:absolute; inset:8px; background:#fff; border-radius:50%}
+  .score-ring span{position:relative; z-index:2; font-weight:900; font-size:26px}
+  .verdict{font-size:22px; font-weight:900}
+  .verdict.pass{color:var(--good)} .verdict.edge{color:var(--warn)} .verdict.fail{color:var(--bad)}
+  .flavor{font-size:17px; line-height:1.45; margin:8px 2px 4px; font-weight:600}
+  .subflavor{color:var(--muted); margin:2px 2px 0; line-height:1.4}
+
+  .breakdown{margin-top:16px; border-top:1px solid #eef2f7; padding-top:14px}
+  .breakdown h3{font-size:13px; letter-spacing:.4px; text-transform:uppercase; color:var(--muted); margin:0 0 10px}
+  .bar{display:grid; grid-template-columns:150px 1fr 46px; gap:10px; align-items:center; margin-bottom:8px; font-size:13px}
+  .bar .track{height:10px; background:#eef2f7; border-radius:99px; overflow:hidden}
+  .bar .fill{height:100%; border-radius:99px; background:linear-gradient(90deg,var(--water1),var(--water2)); width:0; transition:width .8s ease}
+  .bar.neg .fill{background:linear-gradient(90deg,#f0a58f,var(--bad))}
+  .bar .val{text-align:right; font-weight:800; color:#31506d}
+  .bar .name{color:#4b6a86; font-weight:600}
+
+  .hidden{display:none !important}
+  footer{color:#9fc6e6; text-align:center; font-size:12.5px; margin-top:18px; line-height:1.5}
+  .werther{display:inline-block; margin-top:6px; color:#cfe6f7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <span class="logo">🦆</span>
+    <div>Бассейн&nbsp;21<small>шуточный заплыв: доплыл или потонул?</small></div>
+  </div>
+
+  <!-- ============ ЭКРАН 1: ДИСКЛЕЙМЕР ============ -->
+  <section class="card" id="screen-disclaimer">
+    <span class="disc-badge">⚠️ Прочитай перед заплывом</span>
+    <h1>Это игра, а не приговор</h1>
+    <div class="disc-box">
+      Данная игра <b>НОСИТ ИСКЛЮЧИТЕЛЬНО ИГРОВОЙ ФОРМАТ</b> и
+      <b>НЕ ЯВЛЯЕТСЯ ОФИЦИАЛЬНЫМ ИЛИ ПРАВДОПОДОБНЫМ МЕРИЛОМ ПРОХОЖДЕНИЯ</b>
+      бассейна, отбора или чего-либо ещё. Уточка ничего не решает 🦆
+      Результат — это шутка ради настроения, а не предсказание.
+      Реальные итоги знает только платформа (и, возможно, Вертер).
+    </div>
+    <button class="btn block" id="btn-start">Понятно, поплыли! 🌊</button>
+  </section>
+
+  <!-- ============ ЭКРАН 2: ФОРМА ============ -->
+  <section class="card hidden" id="screen-game">
+    <h1>Занеси свои данные</h1>
+    <p class="lead">Возьми цифры с платформы. Всё как есть — уточка не любит вранья.</p>
+    <form id="game-form">
+      <div class="grid">
+        <div class="field">
+          <label>Баллы (HP) 💙
+            <span class="hint">сколько очков набрано за бассейн</span></label>
+          <input type="number" id="points" min="0" step="1" value="0" required />
+        </div>
+        <div class="field">
+          <label>Среднее время в школе, ч/день ⏱
+            <span class="hint">сколько часов в среднем ты в кампусе</span></label>
+          <input type="number" id="avgTime" min="0" max="24" step="0.5" value="0" required />
+        </div>
+
+        <div class="field">
+          <label>Зелёные дни 🟢
+            <span class="hint">из 12 дней бассейна</span></label>
+          <input type="number" id="greenDays" min="0" max="12" step="1" value="0" required />
+        </div>
+        <div class="field">
+          <label>Ручные дни ✋
+            <span class="hint">дни, закрытые ручной проверкой</span></label>
+          <input type="number" id="manualDays" min="0" max="12" step="1" value="0" required />
+        </div>
+
+        <div class="field">
+          <label>Групповой проект №1, % 👥
+            <span class="hint">насколько сдан (0–100)</span></label>
+          <input type="number" id="proj1" min="0" max="100" step="1" value="0" required />
+        </div>
+        <div class="field">
+          <label>Групповой проект №2, % 👥
+            <span class="hint">насколько сдан (0–100)</span></label>
+          <input type="number" id="proj2" min="0" max="100" step="1" value="0" required />
+        </div>
+
+        <div class="field">
+          <label>Экзамен №1, % 📝
+            <span class="hint">результат (0–100)</span></label>
+          <input type="number" id="exam1" min="0" max="100" step="1" value="0" required />
+        </div>
+        <div class="field">
+          <label>Экзамен №2, % 📝
+            <span class="hint">результат (0–100)</span></label>
+          <input type="number" id="exam2" min="0" max="100" step="1" value="0" required />
+        </div>
+
+        <div class="field">
+          <label>Участие в играх 🎮
+            <span class="hint">сколько игр/активностей отыграл</span></label>
+          <input type="number" id="games" min="0" step="1" value="0" required />
+        </div>
+        <div class="field">
+          <label>Другие победы 🏆
+            <span class="hint">митапы, хелпы, доп. активности</span></label>
+          <input type="number" id="wins" min="0" step="1" value="0" required />
+        </div>
+
+        <div class="field">
+          <label>Проведённые мероприятия 🎤
+            <span class="hint">сколько ивентов организовал/провёл</span></label>
+          <input type="number" id="events" min="0" step="1" value="0" required />
+        </div>
+        <div class="field">
+          <label>Какие мероприятия? 📋
+            <span class="hint">через запятую (необязательно)</span></label>
+          <input type="text" id="eventsList" placeholder="митап, воркшоп, турнир…" />
+        </div>
+
+        <div class="field full">
+          <label>Пенальти за грубые нарушения ⛔
+            <span class="hint">сколько раз словил серьёзное нарушение</span></label>
+          <input type="number" id="violations" min="0" step="1" value="0" required />
+        </div>
+
+        <div class="field full">
+          <label>Был ли чит / списывание? 🚨
+            <span class="hint">Вертер бдит — честность важнее</span></label>
+          <div class="seg danger">
+            <input type="radio" name="cheat" id="cheat-no" value="0" checked>
+            <label for="cheat-no">Нет, всё честно</label>
+            <input type="radio" name="cheat" id="cheat-yes" value="1">
+            <label for="cheat-yes">Был грешок…</label>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn block">Забить себя в заплыв 🦆</button>
+    </form>
+  </section>
+
+  <!-- ============ ЭКРАН 3: РЕЗУЛЬТАТ ============ -->
+  <section class="card hidden" id="screen-result">
+    <div class="pool-wrap">
+      <div class="pool" id="pool">
+        <div class="sun">☀️</div>
+        <div class="cloud c1">☁️</div>
+        <div class="cloud c2">☁️</div>
+        <div class="waves"></div>
+        <div class="start"></div>
+        <div class="shore"><span class="flag">🏖️</span></div>
+        <div class="duck" id="duck">🦆</div>
+      </div>
+    </div>
+
+    <div class="score-head">
+      <div class="score-ring" id="ring"><span id="scoreNum">0</span></div>
+      <div>
+        <div class="verdict" id="verdict">…</div>
+        <div class="subflavor" id="subflavor"></div>
+      </div>
+    </div>
+    <p class="flavor" id="flavor"></p>
+
+    <div class="breakdown">
+      <h3>Из чего сложился заплыв</h3>
+      <div id="bars"></div>
+    </div>
+
+    <div class="row-actions">
+      <button class="btn ghost" id="btn-again">Проплыть ещё раз 🔁</button>
+      <button class="btn" id="btn-edit">Поправить данные ✏️</button>
+    </div>
+  </section>
+
+  <footer>
+    🦆 «Бассейн&nbsp;21» — игровой формат, не официальный результат.
+    <span class="werther">👀 Вертер бдит, но это тоже понарошку.</span>
+  </footer>
+</div>
+
+<script>
+/* =====================================================================
+   НАСТРОЙКИ СКОРА — крути тут, чтобы поменять баланс игры
+   ===================================================================== */
+const CFG = {
+  // Сколько баллов на платформе считаем "полным баком" (100% по этому пункту)
+  POINTS_FULL: 1000,
+  // Сколько игр = максимум по пункту "участие в играх"
+  GAMES_FULL: 5,
+  // Сколько доп. побед = максимум
+  WINS_FULL: 3,
+  // Сколько проведённых мероприятий = максимум по пункту
+  EVENTS_FULL: 3,
+  // Часов в школе в день для 100% по пункту "среднее время"
+  TIME_FULL_HOURS: 8,
+  // Всего дней в бассейне
+  TOTAL_DAYS: 12,
+
+  // Веса вклада каждого пункта (не обязаны в сумме давать 100 — нормируем)
+  W: {
+    points:   22,
+    green:    16,
+    manual:    6,
+    proj1:     9,
+    proj2:     9,
+    exam1:    10,
+    exam2:    10,
+    games:     7,
+    wins:      5,
+    events:    6,
+    time:     11,
+  },
+
+  // Штрафы (вычитаются из итогового скора 0..100)
+  VIOLATION_PENALTY: 12,  // за каждое грубое нарушение
+  CHEAT_PENALTY:     45,  // если был чит — почти гарантированное дно
+
+  // Пороги вердикта
+  PASS: 55,   // >= PASS  -> доплыл
+  EDGE: 66,   // PASS..EDGE -> доплыл, но еле-еле (нервный текст)
+};
+
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const $ = id => document.getElementById(id);
+
+/* ---------- переключение экранов ---------- */
+function show(id){
+  ['screen-disclaimer','screen-game','screen-result'].forEach(s=>$(s).classList.add('hidden'));
+  $(id).classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('btn-start').addEventListener('click', ()=>show('screen-game'));
+$('btn-edit').addEventListener('click', ()=>show('screen-game'));
+$('btn-again').addEventListener('click', ()=>{ $('game-form').reset(); show('screen-game'); });
+
+/* ---------- сбор данных и расчёт ---------- */
+function num(id){ const v = parseFloat($(id).value); return isNaN(v)?0:v; }
+
+function compute(){
+  const d = {
+    points: num('points'),
+    avgTime: num('avgTime'),
+    greenDays: num('greenDays'),
+    manualDays: num('manualDays'),
+    proj1: num('proj1'), proj2: num('proj2'),
+    exam1: num('exam1'), exam2: num('exam2'),
+    games: num('games'), wins: num('wins'),
+    events: num('events'),
+    eventsList: ($('eventsList').value || '').trim(),
+    violations: num('violations'),
+    cheat: $('cheat-yes').checked ? 1 : 0,
+  };
+
+  // нормируем каждый пункт в 0..1
+  const n = {
+    points: clamp01(d.points / CFG.POINTS_FULL),
+    green:  clamp01(d.greenDays / CFG.TOTAL_DAYS),
+    manual: clamp01(d.manualDays / CFG.TOTAL_DAYS),
+    proj1:  clamp01(d.proj1 / 100),
+    proj2:  clamp01(d.proj2 / 100),
+    exam1:  clamp01(d.exam1 / 100),
+    exam2:  clamp01(d.exam2 / 100),
+    games:  clamp01(d.games / CFG.GAMES_FULL),
+    wins:   clamp01(d.wins / CFG.WINS_FULL),
+    events: clamp01(d.events / CFG.EVENTS_FULL),
+    time:   clamp01(d.avgTime / CFG.TIME_FULL_HOURS),
+  };
+
+  let wSum = 0, acc = 0;
+  for (const k in CFG.W){ wSum += CFG.W[k]; acc += n[k]*CFG.W[k]; }
+  let base = (acc / wSum) * 100;               // базовый скор 0..100
+  const penalty = d.violations*CFG.VIOLATION_PENALTY + d.cheat*CFG.CHEAT_PENALTY;
+  const score = Math.max(0, Math.min(100, Math.round(base - penalty)));
+
+  return { d, n, base, penalty, score };
+}
+
+/* ---------- тексты ---------- */
+const TXT = {
+  pass: [ // доплыл — неуверенно-позитивно
+    "Кажется, ты доплываешь… но это не точно 🦆",
+    "Похоже, берег близко. Похоже. Ничего не гарантируем.",
+    "Ты почти на суше! Юридически вопрос открыт, но лапки уже на песке.",
+    "Берег виднеется на горизонте. Или это мираж? Плыви — узнаем.",
+    "Технически ты выбрался. Как это вышло — знает только уточка.",
+  ],
+  edge: [ // доплыл, но еле-еле — нервно
+    "Одна лапка на берегу, вторая машет Вертеру. Осторожнее 👀",
+    "Держишься на воде из последних сил, но пока плывёшь.",
+    "Берег есть, дыхание сбито. Кажется, ты близок… но Вертер бдит.",
+    "На честном слове и на одном крыле — но ты почти там.",
+  ],
+  fail: [ // потонул — мягко-негативно
+    "Тут поможет только чудо 🙏",
+    "А может, проплывёшь бассейн ещё разок? 🌊",
+    "Вода тёплая, компания хорошая — оставайся ещё на заплыв!",
+    "Уточка немного устала. Отдохнём и попробуем снова?",
+    "Берег был так близко… но не в этот раз. Плаваем дальше!",
+    "Ты не потонул — ты выбрал длинный маршрут. Ещё кружок? 🔁",
+  ],
+  cheat: [ // особый случай — чит
+    "Вертер всё видел 👀 Уточку сняли с заплыва за списывание.",
+    "Чит засчитан бассейном. Даже уточка отвернулась 🦆🚫",
+  ],
+};
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ---------- отрисовка результата ---------- */
+function renderResult(r){
+  show('screen-result');
+
+  const passed = r.score >= CFG.PASS;
+  const edge = passed && r.score < CFG.EDGE;
+  const cheated = r.d.cheat === 1;
+
+  // вердикт + цвет
+  const v = $('verdict');
+  v.className = 'verdict ' + (passed ? (edge?'edge':'pass') : 'fail');
+  v.textContent = passed ? (edge ? 'Еле доплыл 😮‍💨' : 'Доплыл! (наверное) 🎉') : 'Потонул 🌊';
+  $('subflavor').textContent = passed
+    ? 'проходит на основное обучение… но это внутренняя проверка ещё поглядит'
+    : 'основное обучение пока машет с берега';
+
+  // флейвор-текст
+  let pool = cheated ? TXT.cheat : (passed ? (edge?TXT.edge:TXT.pass) : TXT.fail);
+  $('flavor').textContent = pick(pool);
+
+  // мероприятия — если перечислены, добавим строкой к подписи
+  if (r.d.eventsList){
+    $('subflavor').textContent += ` · 🎤 провёл: ${r.d.eventsList}`;
+  }
+
+  // кольцо-скор
+  const ring = $('ring');
+  const ringColor = passed ? (edge?'#e08a00':'#1f9d55') : '#c8442a';
+  ring.style.setProperty('--ring', ringColor);
+  ring.style.setProperty('--p', 0);
+  let cur = 0;
+  const step = () => {
+    cur += Math.max(1, Math.ceil(r.score/28));
+    if (cur >= r.score) cur = r.score;
+    $('scoreNum').textContent = cur;
+    ring.style.setProperty('--p', cur);
+    if (cur < r.score) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+
+  // разбивка по пунктам
+  renderBars(r);
+
+  // анимация уточки
+  swimDuck(r, passed);
+}
+
+const BAR_LABELS = {
+  points:'Баллы (HP)', green:'Зелёные дни', manual:'Ручные дни',
+  proj1:'Групповой №1', proj2:'Групповой №2', exam1:'Экзамен №1', exam2:'Экзамен №2',
+  games:'Участие в играх', wins:'Другие победы',
+  events:'Мероприятия', time:'Время в школе',
+};
+function renderBars(r){
+  const box = $('bars'); box.innerHTML='';
+  for (const k in CFG.W){
+    const pct = Math.round(r.n[k]*100);
+    const el = document.createElement('div');
+    el.className='bar';
+    el.innerHTML = `<span class="name">${BAR_LABELS[k]}</span>
+      <span class="track"><span class="fill"></span></span>
+      <span class="val">${pct}%</span>`;
+    box.appendChild(el);
+    requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = pct+'%'; });
+  }
+  if (r.penalty > 0){
+    const el = document.createElement('div');
+    el.className='bar neg';
+    const shown = Math.min(100, Math.round(r.penalty));
+    el.innerHTML = `<span class="name">Штрафы ⛔</span>
+      <span class="track"><span class="fill"></span></span>
+      <span class="val">−${r.penalty}</span>`;
+    box.appendChild(el);
+    requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = shown+'%'; });
+  }
+}
+
+/* ---------- уточка плывёт ---------- */
+function swimDuck(r, passed){
+  const pool = $('pool');
+  const duck = $('duck');
+  // сброс состояния
+  duck.className='duck';
+  duck.style.transition='none';
+  duck.style.left='0px';
+  duck.style.top='41%';
+  duck.style.opacity='1';
+  duck.style.transform='translateX(24px) rotate(0deg)';
+  // почистить старые пузыри
+  pool.querySelectorAll('.bubble').forEach(b=>b.remove());
+
+  const W = pool.clientWidth;
+  const shoreX = W - 60;              // граница берега
+  // насколько далеко доплывёт при неудаче — пропорционально скору
+  const failX = Math.round((r.score / CFG.PASS) * (shoreX * 0.8));
+
+  // старт покачивания
+  void duck.offsetWidth; // reflow
+  duck.classList.add('bob');
+
+  setTimeout(()=>{
+    duck.style.transition='left 3.2s cubic-bezier(.35,.1,.3,1)';
+    if (passed){
+      duck.style.left = shoreX + 'px';
+      // выбирается на берег
+      setTimeout(()=>{
+        duck.style.transition='top .6s ease, transform .6s ease';
+        duck.style.top='30%';
+        duck.style.transform='translateX(24px) rotate(-8deg)';
+      }, 3200);
+    } else {
+      duck.style.left = failX + 'px';
+      // тонет
+      setTimeout(()=> sink(duck, pool), 2400);
+    }
+  }, 350);
+}
+
+function sink(duck, pool){
+  duck.classList.remove('bob');
+  duck.classList.add('sink');
+  duck.style.top='78%';
+  duck.style.opacity='0.15';
+  duck.style.transform='translateX(24px) rotate(200deg)';
+  // пузырьки
+  const x = parseFloat(duck.style.left)||0;
+  for (let i=0;i<6;i++){
+    const b=document.createElement('div');
+    b.className='bubble'; b.textContent='🫧';
+    b.style.left=(x+16+ (Math.random()*24-12))+'px';
+    b.style.top='60%';
+    b.style.animation=`rise ${1.2+Math.random()}s ease-in ${i*0.18}s forwards`;
+    pool.appendChild(b);
+  }
+}
+
+/* ---------- submit ---------- */
+$('game-form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const r = compute();
+  renderResult(r);
+});
+</script>
+</body>
+</html>
