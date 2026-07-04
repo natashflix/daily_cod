@@ -195,7 +195,7 @@
       <div class="grid">
         <div class="field">
           <label>Баллы (HP) 💙
-            <span class="hint">потолок ~540 (макс. 45 HP за зелёный день × 12)</span></label>
+            <span class="hint">общий HP; потолок 590 (8×45 + 2 экз×50 + 2 групп×65)</span></label>
           <input type="number" id="points" min="0" step="1" value="0" required />
         </div>
         <div class="field">
@@ -216,25 +216,25 @@
         </div>
 
         <div class="field">
-          <label>Групповой проект №1, % 👥
-            <span class="hint">насколько сдан (0–100)</span></label>
-          <input type="number" id="proj1" min="0" max="100" step="1" value="0" required />
+          <label>Групповой проект №1, HP 👥
+            <span class="hint">набрано HP (макс 65)</span></label>
+          <input type="number" id="proj1" min="0" max="65" step="1" value="0" required />
         </div>
         <div class="field">
-          <label>Групповой проект №2, % 👥
-            <span class="hint">насколько сдан (0–100)</span></label>
-          <input type="number" id="proj2" min="0" max="100" step="1" value="0" required />
+          <label>Групповой проект №2, HP 👥
+            <span class="hint">набрано HP (макс 65)</span></label>
+          <input type="number" id="proj2" min="0" max="65" step="1" value="0" required />
         </div>
 
         <div class="field">
-          <label>Экзамен №1, % 📝
-            <span class="hint">результат (0–100)</span></label>
-          <input type="number" id="exam1" min="0" max="100" step="1" value="0" required />
+          <label>Экзамен №1, HP 📝
+            <span class="hint">набрано HP (макс 50)</span></label>
+          <input type="number" id="exam1" min="0" max="50" step="1" value="0" required />
         </div>
         <div class="field">
-          <label>Экзамен №2, % 📝
-            <span class="hint">результат (0–100)</span></label>
-          <input type="number" id="exam2" min="0" max="100" step="1" value="0" required />
+          <label>Экзамен №2, HP 📝
+            <span class="hint">набрано HP (макс 50)</span></label>
+          <input type="number" id="exam2" min="0" max="50" step="1" value="0" required />
         </div>
 
         <div class="field">
@@ -325,10 +325,15 @@
    НАСТРОЙКИ СКОРА — крути тут, чтобы поменять баланс игры
    ===================================================================== */
 const CFG = {
-  // Зелёный день даёт максимум HP; день зелёный, если сделано >= 40% заданий дня
+  // HP-экономика 12 дней бассейна:
+  //   8 обычных дней  x 45 HP = 360  (день зелёный, если сделано >= 40% заданий)
+  //   2 дня экзаменов x 50 HP = 100
+  //   2 дня групповых x 65 HP = 130
   HP_PER_GREEN_DAY_MAX: 45,
-  // "Полный бак" по баллам = 12 дней * 45 HP = 540 (потолок за весь бассейн)
-  POINTS_FULL: 45 * 12,
+  EXAM_HP_MAX: 50,
+  PROJECT_HP_MAX: 65,
+  // "Полный бак" по баллам = потолок HP за весь бассейн = 590
+  POINTS_FULL: 8*45 + 2*50 + 2*65,
   // Сколько игр = максимум по пункту "участие в играх"
   GAMES_FULL: 5,
   // Сколько доп. побед = максимум
@@ -355,9 +360,9 @@ const CFG = {
     time:     11,
   },
 
-  // Штрафы (вычитаются из итогового скора 0..100)
-  VIOLATION_PENALTY: 12,  // за каждое грубое нарушение
-  CHEAT_PENALTY:     45,  // если был чит — почти гарантированное дно
+  // Штрафы вычитаются напрямую из HP (как на платформе)
+  CHEAT_HP_PENALTY:     100, // чит снижает 100 HP (известно точно)
+  VIOLATION_HP_PENALTY:  50, // за грубое нарушение — точный HP-штраф НЕИЗВЕСТЕН, подкрути
 
   // Пороги вердикта
   PASS: 55,   // >= PASS  -> доплыл
@@ -395,15 +400,19 @@ function compute(){
     cheat: $('cheat-yes').checked ? 1 : 0,
   };
 
+  // штрафы бьют по HP: чит −100, каждое грубое нарушение −VIOLATION_HP_PENALTY
+  const penaltyHp = d.cheat*CFG.CHEAT_HP_PENALTY + d.violations*CFG.VIOLATION_HP_PENALTY;
+  const effHp = Math.max(0, d.points - penaltyHp);
+
   // нормируем каждый пункт в 0..1
   const n = {
-    points: clamp01(d.points / CFG.POINTS_FULL),
+    points: clamp01(effHp / CFG.POINTS_FULL),
     green:  clamp01(d.greenDays / CFG.TOTAL_DAYS),
     manual: clamp01(d.manualDays / CFG.TOTAL_DAYS),
-    proj1:  clamp01(d.proj1 / 100),
-    proj2:  clamp01(d.proj2 / 100),
-    exam1:  clamp01(d.exam1 / 100),
-    exam2:  clamp01(d.exam2 / 100),
+    proj1:  clamp01(d.proj1 / CFG.PROJECT_HP_MAX),
+    proj2:  clamp01(d.proj2 / CFG.PROJECT_HP_MAX),
+    exam1:  clamp01(d.exam1 / CFG.EXAM_HP_MAX),
+    exam2:  clamp01(d.exam2 / CFG.EXAM_HP_MAX),
     games:  clamp01(d.games / CFG.GAMES_FULL),
     wins:   clamp01(d.wins / CFG.WINS_FULL),
     events: clamp01(d.events / CFG.EVENTS_FULL),
@@ -412,11 +421,9 @@ function compute(){
 
   let wSum = 0, acc = 0;
   for (const k in CFG.W){ wSum += CFG.W[k]; acc += n[k]*CFG.W[k]; }
-  let base = (acc / wSum) * 100;               // базовый скор 0..100
-  const penalty = d.violations*CFG.VIOLATION_PENALTY + d.cheat*CFG.CHEAT_PENALTY;
-  const score = Math.max(0, Math.min(100, Math.round(base - penalty)));
+  const score = Math.max(0, Math.min(100, Math.round((acc / wSum) * 100)));
 
-  return { d, n, base, penalty, score };
+  return { d, n, penaltyHp, effHp, score };
 }
 
 /* ---------- тексты ---------- */
@@ -442,9 +449,10 @@ const TXT = {
     "Берег был так близко… но не в этот раз. Плаваем дальше!",
     "Ты не потонул — ты выбрал длинный маршрут. Ещё кружок? 🔁",
   ],
-  cheat: [ // особый случай — чит
-    "Вертер всё видел 👀 Уточку сняли с заплыва за списывание.",
-    "Чит засчитан бассейном. Даже уточка отвернулась 🦆🚫",
+  cheat: [ // приписка при чите (−100 HP)
+    "🚨 Вертер зафиксировал чит: −100 HP, уточка краснеет",
+    "🚨 чит замечен: минус 100 HP к заплыву, Вертер записал 👀",
+    "🚨 −100 HP за списывание — Вертер всё видел",
   ],
 };
 const pick = a => a[Math.floor(Math.random()*a.length)];
@@ -465,10 +473,14 @@ function renderResult(r){
     ? 'проходит на основное обучение… но это внутренняя проверка ещё поглядит'
     : 'основное обучение пока машет с берега';
 
-  // флейвор-текст
-  let pool = cheated ? TXT.cheat : (passed ? (edge?TXT.edge:TXT.pass) : TXT.fail);
+  // флейвор-текст по вердикту
+  let pool = passed ? (edge ? TXT.edge : TXT.pass) : TXT.fail;
   $('flavor').textContent = pick(pool);
 
+  // чит — приписка (Вертер зафиксировал −100 HP), вердикт при этом честный
+  if (cheated){
+    $('subflavor').textContent += ` · ${pick(TXT.cheat)}`;
+  }
   // мероприятия — если перечислены, добавим строкой к подписи
   if (r.d.eventsList){
     $('subflavor').textContent += ` · 🎤 провёл: ${r.d.eventsList}`;
@@ -514,13 +526,13 @@ function renderBars(r){
     box.appendChild(el);
     requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = pct+'%'; });
   }
-  if (r.penalty > 0){
+  if (r.penaltyHp > 0){
     const el = document.createElement('div');
     el.className='bar neg';
-    const shown = Math.min(100, Math.round(r.penalty));
-    el.innerHTML = `<span class="name">Штрафы ⛔</span>
+    const shown = Math.min(100, Math.round(r.penaltyHp / CFG.POINTS_FULL * 100));
+    el.innerHTML = `<span class="name">Штрафы, HP ⛔</span>
       <span class="track"><span class="fill"></span></span>
-      <span class="val">−${r.penalty}</span>`;
+      <span class="val">−${r.penaltyHp}</span>`;
     box.appendChild(el);
     requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = shown+'%'; });
   }
