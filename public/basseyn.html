@@ -165,6 +165,8 @@
   .bar .track{height:10px; background:#eef2f7; border-radius:99px; overflow:hidden}
   .bar .fill{height:100%; border-radius:99px; background:linear-gradient(90deg,var(--water1),var(--water2)); width:0; transition:width .8s ease}
   .bar.neg .fill{background:linear-gradient(90deg,#f0a58f,var(--bad))}
+  .bar.luck .fill{background:linear-gradient(90deg,#8fe0a0,var(--good))}
+  .bar.luck .val{color:var(--good)}
   .bar .val{text-align:right; font-weight:800; color:#31506d}
   .bar .name{color:#4b6a86; font-weight:600}
 
@@ -219,13 +221,13 @@
 
         <div class="field">
           <label>Групповой проект №1, HP 👥
-            <span class="hint">набрано HP (макс 65)</span></label>
-          <input type="number" id="proj1" min="0" max="65" step="1" value="0" required />
+            <span class="hint">набрано HP (макс 72)</span></label>
+          <input type="number" id="proj1" min="0" max="72" step="1" value="0" required />
         </div>
         <div class="field">
           <label>Групповой проект №2, HP 👥
-            <span class="hint">набрано HP (макс 65)</span></label>
-          <input type="number" id="proj2" min="0" max="65" step="1" value="0" required />
+            <span class="hint">набрано HP (макс 60)</span></label>
+          <input type="number" id="proj2" min="0" max="60" step="1" value="0" required />
         </div>
 
         <div class="field">
@@ -237,6 +239,12 @@
           <label>Экзамен №2, HP 📝
             <span class="hint">набрано HP (макс 50)</span></label>
           <input type="number" id="exam2" min="0" max="50" step="1" value="0" required />
+        </div>
+
+        <div class="field full">
+          <label>Баллы героя 🦸 (как думаешь, сколько у тебя?)
+            <span class="hint">точных критериев никто не знает; поговаривают, для прохода нужно ~4</span></label>
+          <input type="number" id="hero" min="0" max="10" step="1" value="0" required />
         </div>
 
         <div class="field">
@@ -353,22 +361,29 @@ const CFG = {
   // HP-экономика 12 дней бассейна:
   //   8 обычных дней  x 45 HP = 360  (день зелёный, если сделано >= 40% заданий)
   //   2 дня экзаменов x 50 HP = 100
-  //   2 дня групповых x 65 HP = 130
+  //   групповой №1 = 72 HP, групповой №2 = 60 HP = 132
   HP_PER_GREEN_DAY_MAX: 45,
   EXAM_HP_MAX: 50,
-  PROJECT_HP_MAX: 65,
-  // "Полный бак" по баллам = потолок HP за весь бассейн = 590
-  POINTS_FULL: 8*45 + 2*50 + 2*65,
+  PROJECT1_HP_MAX: 72,
+  PROJECT2_HP_MAX: 60,
+  // "Полный бак" по баллам = потолок HP за весь бассейн = 592
+  POINTS_FULL: 8*45 + 2*50 + 72 + 60,
   // Сколько игр = максимум по пункту "участие в играх"
   GAMES_FULL: 5,
   // Сколько доп. побед = максимум
   WINS_FULL: 3,
   // Сколько проведённых мероприятий = максимум по пункту
   EVENTS_FULL: 3,
+  // Баллы героя: поговаривают, для прохода нужно ~4 (точно не знаем)
+  HERO_FULL: 4,
   // Часов в школе в день для 100% по пункту "среднее время"
   TIME_FULL_HOURS: 8,
   // Всего дней в бассейне
   TOTAL_DAYS: 12,
+  // Фактор фарта («настроение Вертера»): случайный бонус 0..LUCK_MAX к скору.
+  // Критерии на платформе непредсказуемы (проходили и с красными днями), поэтому
+  // немного удачи — и это честно отражено отдельной строкой в разбивке.
+  LUCK_MAX: 8,
 
   // Веса вклада каждого пункта (не обязаны в сумме давать 100 — нормируем)
   W: {
@@ -378,6 +393,7 @@ const CFG = {
     proj2:     9,
     exam1:    10,
     exam2:    10,
+    hero:     10,   // баллы героя
     games:     7,
     wins:      5,
     events:    6,
@@ -420,6 +436,7 @@ function compute(){
     greenDays: Math.min(CFG.TOTAL_DAYS, num('greenDays')),
     proj1: num('proj1'), proj2: num('proj2'),
     exam1: num('exam1'), exam2: num('exam2'),
+    hero: num('hero'),
     games: num('games'), wins: num('wins'),
     events: num('events'),
     eventsList: ($('eventsList').value || '').trim(),
@@ -437,10 +454,11 @@ function compute(){
   const n = {
     points: clamp01(effHp / CFG.POINTS_FULL),
     green:  clamp01(d.greenDays / CFG.TOTAL_DAYS),
-    proj1:  clamp01(d.proj1 / CFG.PROJECT_HP_MAX),
-    proj2:  clamp01(d.proj2 / CFG.PROJECT_HP_MAX),
+    proj1:  clamp01(d.proj1 / CFG.PROJECT1_HP_MAX),
+    proj2:  clamp01(d.proj2 / CFG.PROJECT2_HP_MAX),
     exam1:  clamp01(d.exam1 / CFG.EXAM_HP_MAX),
     exam2:  clamp01(d.exam2 / CFG.EXAM_HP_MAX),
+    hero:   clamp01(d.hero / CFG.HERO_FULL),
     games:  clamp01(d.games / CFG.GAMES_FULL),
     wins:   clamp01(d.wins / CFG.WINS_FULL),
     events: clamp01(d.events / CFG.EVENTS_FULL),
@@ -449,9 +467,11 @@ function compute(){
 
   let wSum = 0, acc = 0;
   for (const k in CFG.W){ wSum += CFG.W[k]; acc += n[k]*CFG.W[k]; }
-  const score = Math.max(0, Math.min(100, Math.round((acc / wSum) * 100)));
+  const base = (acc / wSum) * 100;                    // честный скор без фарта
+  const luck = Math.round(Math.random() * CFG.LUCK_MAX); // «настроение Вертера» 0..LUCK_MAX
+  const score = Math.max(0, Math.min(100, Math.round(base + luck)));
 
-  return { d, n, penaltyHp, effHp, score };
+  return { d, n, penaltyHp, effHp, base: Math.round(base), luck, score };
 }
 
 /* ---------- тексты ---------- */
@@ -482,6 +502,12 @@ const TXT = {
     "Течение почему-то стало сильнее…",
     "Кажется, кто-то на вышке что-то заметил",
   ],
+  miracle: [ // прошёл только за счёт фарта — по раскладам тонул
+    "Каким-то чудом тебя вынесло на берег — Вертер сегодня добрый 🍀",
+    "По всем раскладам ты тонул, но течением прибило к суше 🤷",
+    "Бывает же: с такими вводными — и на берегу. Критерии тут загадка 👀",
+    "Официально: непонятно как, но ты доплыл. Не спрашивай 🦆",
+  ],
 };
 const pick = a => a[Math.floor(Math.random()*a.length)];
 
@@ -492,19 +518,21 @@ function renderResult(r){
   const passed = r.score >= CFG.PASS;
   const edge = passed && r.score < CFG.EDGE;
   const cheated = r.d.cheat === 1;
+  // «чудо»: по честному скору тонул, но фарт (настроение Вертера) вытянул на берег
+  const miracle = passed && (r.base < CFG.PASS);
 
   // вердикт + цвет
   const v = $('verdict');
   v.className = 'verdict ' + (passed ? (edge?'edge':'pass') : 'fail');
-  v.textContent = passed ? (edge ? 'Еле доплыл 😮‍💨' : 'Доплыл! (наверное) 🎉') : 'Потонул 🌊';
+  v.textContent = passed ? (miracle ? 'Чудом доплыл 🍀' : (edge ? 'Еле доплыл 😮‍💨' : 'Доплыл! (наверное) 🎉')) : 'Потонул 🌊';
   $('subflavor').textContent = passed
     ? 'проходит на основное обучение… но это внутренняя проверка ещё поглядит'
     : 'основное обучение пока машет с берега';
   // зелёные / красные дни (красные посчитаны автоматом из 12)
   $('subflavor').textContent += ` · 🟢 ${r.d.greenDays} / 🔴 ${r.d.redDays} дн.`;
 
-  // флейвор-текст по вердикту
-  let pool = passed ? (edge ? TXT.edge : TXT.pass) : TXT.fail;
+  // флейвор-текст по вердикту (чудо — отдельный набор)
+  let pool = miracle ? TXT.miracle : (passed ? (edge ? TXT.edge : TXT.pass) : TXT.fail);
   $('flavor').textContent = pick(pool);
 
   // чит — тонкая приписка (штраф −100 HP применяется молча), вердикт честный
@@ -549,7 +577,7 @@ function animateRing(r, passed, edge){
 const BAR_LABELS = {
   points:'Баллы (HP)', green:'Зелёные дни',
   proj1:'Групповой №1', proj2:'Групповой №2', exam1:'Экзамен №1', exam2:'Экзамен №2',
-  games:'Участие в играх', wins:'Другие победы',
+  hero:'Баллы героя', games:'Участие в играх', wins:'Другие победы',
   events:'Мероприятия', time:'Время в школе',
 };
 function renderBars(r){
@@ -571,6 +599,16 @@ function renderBars(r){
     el.innerHTML = `<span class="name">Штрафы, HP ⛔</span>
       <span class="track"><span class="fill"></span></span>
       <span class="val">−${r.penaltyHp}</span>`;
+    box.appendChild(el);
+    requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = shown+'%'; });
+  }
+  if (r.luck > 0){
+    const el = document.createElement('div');
+    el.className='bar luck';
+    const shown = Math.round(r.luck / CFG.LUCK_MAX * 100);
+    el.innerHTML = `<span class="name">🍀 Фарт (Вертер)</span>
+      <span class="track"><span class="fill"></span></span>
+      <span class="val">+${r.luck}</span>`;
     box.appendChild(el);
     requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = shown+'%'; });
   }
