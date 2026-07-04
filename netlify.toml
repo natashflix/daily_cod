@@ -1,0 +1,5 @@
+# Netlify: статичный хостинг игры «Бассейн 21».
+# Публикуем папку public; корень сайта отдаёт игру через _redirects.
+[build]
+  publish = "public"
+  command = ""
