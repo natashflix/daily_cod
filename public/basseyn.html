@@ -399,10 +399,14 @@ const CFG = {
   TIME_FULL_HOURS: 8,
   // Всего дней в бассейне
   TOTAL_DAYS: 12,
-  // Фактор фарта («настроение Вертера»): случайный бонус 0..LUCK_MAX к скору.
-  // Критерии на платформе непредсказуемы (проходили и с красными днями), поэтому
-  // немного удачи — и это честно отражено отдельной строкой в разбивке.
-  LUCK_MAX: 10,
+
+  // Критерии на платформе непредсказуемы: люди с одними красными днями проходили,
+  // а с одними зелёными — нет. Поэтому игра не выдаёт приговор, а считает ШАНС:
+  // данные задают вероятность доплыть, а решает бросок («настроение Вертера»).
+  P_MIN: 0.20,          // мин. шанс доплыть (даже слабый заплыв — не безнадёжен)
+  P_MAX: 0.85,          // макс. шанс (даже идеальный заплыв не гарантирован)
+  MIRACLE_CHANCE: 0.45, // доплыл при шансе ниже — «чудом»
+  CONFIDENT_CHANCE: 0.62, // доплыл при шансе выше — уверенно; между — «еле-еле»
 
   // Веса вклада каждого пункта (в сумме 100; баланс «учёба 50 / активности 50»).
   // «Учёба» ограничена 50%, чтобы HP не считался фактически дважды.
@@ -425,10 +429,6 @@ const CFG = {
   // Штрафы вычитаются напрямую из HP (как на платформе)
   CHEAT_HP_PENALTY:     100, // чит снижает 100 HP (известно точно)
   VIOLATION_HP_PENALTY:  50, // за грубое нарушение — точный HP-штраф НЕИЗВЕСТЕН, подкрути
-
-  // Пороги вердикта (сделаны подобрее)
-  PASS: 48,   // >= PASS  -> доплыл
-  EDGE: 60,   // PASS..EDGE -> доплыл, но еле-еле (нервный текст)
 
   // Длительность заплыва уточки, мс — тянем подольше ради саспенса
   SWIM_MS: 9000,
@@ -489,11 +489,14 @@ function compute(){
 
   let wSum = 0, acc = 0;
   for (const k in CFG.W){ wSum += CFG.W[k]; acc += n[k]*CFG.W[k]; }
-  const base = (acc / wSum) * 100;                    // честный скор без фарта
-  const luck = Math.round(Math.random() * CFG.LUCK_MAX); // «настроение Вертера» 0..LUCK_MAX
-  const score = Math.max(0, Math.min(100, Math.round(base + luck)));
+  const base = acc / wSum;                              // сила заплыва 0..1
 
-  return { d, n, penaltyHp, effHp, base: Math.round(base), luck, score };
+  // данные задают ШАНС доплыть (P_MIN..P_MAX), а решает бросок Вертера
+  const chance = CFG.P_MIN + (CFG.P_MAX - CFG.P_MIN) * base;
+  const roll = Math.random();
+  const passed = roll < chance;
+
+  return { d, n, penaltyHp, effHp, base: Math.round(base*100), chance, roll, passed };
 }
 
 /* ---------- тексты ---------- */
@@ -524,11 +527,17 @@ const TXT = {
     "Течение почему-то стало сильнее…",
     "Кажется, кто-то на вышке что-то заметил",
   ],
-  miracle: [ // прошёл только за счёт фарта — по раскладам тонул
+  miracle: [ // доплыл при низком шансе — по раскладам тонул
     "Каким-то чудом тебя вынесло на берег — Вертер сегодня добрый 🍀",
     "По всем раскладам ты тонул, но течением прибило к суше 🤷",
     "Бывает же: с такими вводными — и на берегу. Критерии тут загадка 👀",
     "Официально: непонятно как, но ты доплыл. Не спрашивай 🦆",
+  ],
+  unlucky: [ // потонул при высоком шансе — должен был доплыть
+    "По всем раскладам ты должен был доплыть… но Вертер решил иначе 🤷",
+    "Обидно: шансы были отличные, а Вертер сегодня не в духе 😐",
+    "С такими вводными — и вдруг ко дну. Критерии тут загадка, помнишь? 👀",
+    "Не ты плохой — просто Вертер сегодня стрелял без разбора 🤖",
   ],
 };
 const pick = a => a[Math.floor(Math.random()*a.length)];
@@ -537,24 +546,29 @@ const pick = a => a[Math.floor(Math.random()*a.length)];
 function renderResult(r){
   show('screen-result');
 
-  const passed = r.score >= CFG.PASS;
-  const edge = passed && r.score < CFG.EDGE;
+  const passed = r.passed;
   const cheated = r.d.cheat === 1;
-  // «чудо»: по честному скору тонул, но фарт (настроение Вертера) вытянул на берег
-  const miracle = passed && (r.base < CFG.PASS);
+  // доплыл при низком шансе — «чудо»; потонул при высоком — «не повезло»
+  const miracle = passed && r.chance < CFG.MIRACLE_CHANCE;
+  const unlucky = !passed && r.chance > CFG.CONFIDENT_CHANCE;
+  const edge = passed && r.chance < CFG.CONFIDENT_CHANCE; // доплыл, но шанс был так себе
 
   // вердикт + цвет
   const v = $('verdict');
   v.className = 'verdict ' + (passed ? (edge?'edge':'pass') : 'fail');
-  v.textContent = passed ? (miracle ? 'Чудом доплыл 🍀' : (edge ? 'Еле доплыл 😮‍💨' : 'Доплыл! (наверное) 🎉')) : 'Потонул 🌊';
+  v.textContent = passed
+    ? (miracle ? 'Чудом доплыл 🍀' : (edge ? 'Доплыл, но еле-еле 😮‍💨' : 'Доплыл! 🎉'))
+    : (unlucky ? 'Не повезло 🌊' : 'Потонул 🌊');
   $('subflavor').textContent = passed
     ? 'проходит на основное обучение… но это внутренняя проверка ещё поглядит'
     : 'основное обучение пока машет с берега';
-  // зелёные / красные дни (красные посчитаны автоматом из 12)
-  $('subflavor').textContent += ` · 🟢 ${r.d.greenDays} / 🔴 ${r.d.redDays} дн.`;
+  // зелёные / красные дни + честно показываем, какой был шанс
+  $('subflavor').textContent += ` · 🟢 ${r.d.greenDays} / 🔴 ${r.d.redDays} дн. · 🎲 шанс был ~${Math.round(r.chance*100)}%`;
 
-  // флейвор-текст по вердикту (чудо — отдельный набор)
-  let pool = miracle ? TXT.miracle : (passed ? (edge ? TXT.edge : TXT.pass) : TXT.fail);
+  // флейвор-текст: чудо / не повезло / обычные
+  let pool = miracle ? TXT.miracle
+           : unlucky ? TXT.unlucky
+           : passed ? (edge ? TXT.edge : TXT.pass) : TXT.fail;
   $('flavor').textContent = pick(pool);
 
   // чит — тонкая приписка (штраф −100 HP применяется молча), вердикт честный
@@ -580,18 +594,19 @@ function renderResult(r){
   });
 }
 
-// анимированный подсчёт кольца-скора
+// анимированный подсчёт кольца — показывает ШАНС доплыть
 function animateRing(r, passed, edge){
   const ring = $('ring');
+  const target = Math.round(r.chance * 100);
   ring.style.setProperty('--ring', passed ? (edge?'#e08a00':'#1f9d55') : '#c8442a');
   ring.style.setProperty('--p', 0);
   let cur = 0;
   const step = () => {
-    cur += Math.max(1, Math.ceil(r.score/45));
-    if (cur >= r.score) cur = r.score;
-    $('scoreNum').textContent = cur;
+    cur += Math.max(1, Math.ceil(target/45));
+    if (cur >= target) cur = target;
+    $('scoreNum').textContent = cur + '%';
     ring.style.setProperty('--p', cur);
-    if (cur < r.score) requestAnimationFrame(step);
+    if (cur < target) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
@@ -624,16 +639,15 @@ function renderBars(r){
     box.appendChild(el);
     requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = shown+'%'; });
   }
-  if (r.luck > 0){
-    const el = document.createElement('div');
-    el.className='bar luck';
-    const shown = Math.round(r.luck / CFG.LUCK_MAX * 100);
-    el.innerHTML = `<span class="name">🍀 Фарт (Вертер)</span>
-      <span class="track"><span class="fill"></span></span>
-      <span class="val">+${r.luck}</span>`;
-    box.appendChild(el);
-    requestAnimationFrame(()=>{ el.querySelector('.fill').style.width = shown+'%'; });
-  }
+  // итоговый шанс доплыть (из всего выше)
+  const chEl = document.createElement('div');
+  chEl.className = 'bar luck';
+  const chPct = Math.round(r.chance*100);
+  chEl.innerHTML = `<span class="name">🎲 Шанс доплыть</span>
+    <span class="track"><span class="fill"></span></span>
+    <span class="val">${chPct}%</span>`;
+  box.appendChild(chEl);
+  requestAnimationFrame(()=>{ chEl.querySelector('.fill').style.width = chPct+'%'; });
 }
 
 /* ---------- уточка плывёт (долго, ради саспенса) ---------- */
@@ -653,9 +667,9 @@ function swimDuck(r, passed, onDone){
 
   const W = pool.clientWidth;
   const shoreX = W - 118;             // граница берега (с поправкой на крупную утку)
-  // при неудаче всегда выплывает в бассейн (мин. ~34%), а почти-провал уходит к берегу
-  const frac = Math.min(1, r.score / CFG.PASS);
-  const failX = Math.round(shoreX * (0.34 + 0.5 * frac));
+  // при неудаче всегда выплывает в бассейн (мин. ~34%); чем выше был шанс,
+  // тем ближе к берегу заберётся, прежде чем Вертер её достанет
+  const failX = Math.round(shoreX * (0.34 + 0.5 * r.chance));
   const SWIM = CFG.SWIM_MS;
 
   // старт покачивания
